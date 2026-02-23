@@ -9,38 +9,41 @@ import { StatusBar } from 'expo-status-bar';
 
 import { AppProvider, useAppContext } from './src/context/AppContext';
 
-// Screens
+// Screens — base function tabs
+import ShotClockScreen from './src/screens/ShotClockScreen';
+import CameraScreen from './src/screens/CameraScreen';
+import PhoneScreen from './src/screens/PhoneScreen';
+import MessagesScreen from './src/screens/MessagesScreen';
+import TicketScreen from './src/screens/TicketScreen';
+
+// Screens — stack (modals / detail views)
 import WelcomeScreen from './src/screens/WelcomeScreen';
-import HomeScreen from './src/screens/HomeScreen';
+import FlashlightScreen from './src/screens/FlashlightScreen';
+import EventListScreen from './src/screens/EventListScreen';
 import EventDetailScreen from './src/screens/EventDetailScreen';
 import RestrictionScreen from './src/screens/RestrictionScreen';
 import EmergencyAppsScreen from './src/screens/EmergencyAppsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
-import PhoneScreen from './src/screens/PhoneScreen';
-import MessagesScreen from './src/screens/MessagesScreen';
-import FlashlightScreen from './src/screens/FlashlightScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// ─── Tab icon helper ──────────────────────────────────────────────────────────
+// ─── Tab icon map ─────────────────────────────────────────────────────────────
+//  BUZR    → home/lock icon — the shot clock home screen
+//  Camera  → camera-outline silhouette — 15-min per-event timer
+//  Phone   → call-outline silhouette of a phone — always available
+//  Messages→ chatbubble-outline text bubble — always available
+//  Ticket  → ticket-outline — access to your event ticket
 function tabIcon(routeName, focused) {
-  const icons = {
-    Events:      focused ? 'calendar'          : 'calendar-outline',
-    Phone:       focused ? 'call'              : 'call-outline',
-    Flashlight:  focused ? 'flashlight'        : 'flashlight-outline',
-    Messages:    focused ? 'chatbubble'        : 'chatbubble-outline',
-    Profile:     focused ? 'person'            : 'person-outline',
+  const map = {
+    BUZR:     focused ? 'lock-closed'        : 'lock-closed-outline',
+    Camera:   focused ? 'camera'             : 'camera-outline',
+    Phone:    focused ? 'call'               : 'call-outline',
+    Messages: focused ? 'chatbubble'         : 'chatbubble-outline',
+    Ticket:   focused ? 'ticket'             : 'ticket-outline',
   };
-  return icons[routeName] ?? 'ellipse-outline';
+  return map[routeName] ?? 'ellipse-outline';
 }
-
-// ─── Tab descriptions shown to users ─────────────────────────────────────────
-//   Events    → browse & register for events
-//   Phone     → silhouette of a phone  → make calls (always available)
-//   Flashlight→ silhouette of a flashlight → torch utility (always available)
-//   Messages  → text bubble            → send texts (always available)
-//   Profile   → your account, consent, and emergency apps
 
 // ─── Bottom Tab Navigator ─────────────────────────────────────────────────────
 function MainTabs() {
@@ -56,7 +59,7 @@ function MainTabs() {
           paddingTop: 6,
           height: 64,
         },
-        tabBarActiveTintColor: '#A78BFA',
+        tabBarActiveTintColor: '#F97316',
         tabBarInactiveTintColor: '#475569',
         tabBarLabelStyle: {
           fontSize: 11,
@@ -64,60 +67,36 @@ function MainTabs() {
           letterSpacing: 0.3,
         },
         tabBarIcon: ({ focused, color, size }) => (
-          <Ionicons
-            name={tabIcon(route.name, focused)}
-            size={size}
-            color={color}
-          />
+          <Ionicons name={tabIcon(route.name, focused)} size={size} color={color} />
         ),
       })}
     >
-      {/* ① Events — browse upcoming events and register */}
-      <Tab.Screen
-        name="Events"
-        component={HomeScreen}
-        options={{ tabBarLabel: 'Events' }}
-      />
+      {/* ① BUZR — shot clock home screen; centered BUZR branding with event countdown */}
+      <Tab.Screen name="BUZR" component={ShotClockScreen} options={{ tabBarLabel: 'BUZR' }} />
 
-      {/* ② Phone — silhouette of a phone; tap to open dial pad and make calls */}
-      <Tab.Screen
-        name="Phone"
-        component={PhoneScreen}
-        options={{ tabBarLabel: 'Phone' }}
-      />
+      {/* ② Camera — silhouette camera icon; 15-minute per-event usage limit */}
+      <Tab.Screen name="Camera" component={CameraScreen} options={{ tabBarLabel: 'Camera' }} />
 
-      {/* ③ Flashlight — silhouette of a flashlight; tap to toggle the torch */}
-      <Tab.Screen
-        name="Flashlight"
-        component={FlashlightScreen}
-        options={{ tabBarLabel: 'Flashlight' }}
-      />
+      {/* ③ Phone — silhouette of a phone; dial pad that opens native phone dialer */}
+      <Tab.Screen name="Phone" component={PhoneScreen} options={{ tabBarLabel: 'Phone' }} />
 
-      {/* ④ Messages — text bubble icon; tap to open messages and send texts */}
-      <Tab.Screen
-        name="Messages"
-        component={MessagesScreen}
-        options={{ tabBarLabel: 'Messages' }}
-      />
+      {/* ④ Messages — text bubble icon; opens native Messages app for SMS */}
+      <Tab.Screen name="Messages" component={MessagesScreen} options={{ tabBarLabel: 'Messages' }} />
 
-      {/* ⑤ Profile — manage your account, consent, and emergency apps */}
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ tabBarLabel: 'Profile' }}
-      />
+      {/* ⑤ Ticket — access to your registered event ticket with barcode */}
+      <Tab.Screen name="Ticket" component={TicketScreen} options={{ tabBarLabel: 'Ticket' }} />
     </Tab.Navigator>
   );
 }
 
-// ─── Root Stack (handles onboarding + modal screens) ─────────────────────────
+// ─── Root Stack ───────────────────────────────────────────────────────────────
 function RootNavigator() {
   const { loading, consentGiven } = useAppContext();
 
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#0F172A', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color="#A78BFA" />
+        <ActivityIndicator size="large" color="#F97316" />
       </View>
     );
   }
@@ -132,28 +111,19 @@ function RootNavigator() {
         contentStyle: { backgroundColor: '#0F172A' },
       }}
     >
-      {/* Onboarding — shown to first-time users before consent */}
+      {/* Onboarding consent screen */}
       <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
 
-      {/* Main app with bottom tabs */}
+      {/* Main app — bottom tab navigator */}
       <Stack.Screen name="Home" component={MainTabs} options={{ headerShown: false }} />
 
-      {/* Detail / modal screens pushed on top of tabs */}
-      <Stack.Screen
-        name="EventDetail"
-        component={EventDetailScreen}
-        options={{ title: 'Event Details' }}
-      />
-      <Stack.Screen
-        name="Restriction"
-        component={RestrictionScreen}
-        options={{ title: 'Active Restrictions' }}
-      />
-      <Stack.Screen
-        name="EmergencyApps"
-        component={EmergencyAppsScreen}
-        options={{ title: 'Emergency Apps' }}
-      />
+      {/* Stack screens accessible from within the app */}
+      <Stack.Screen name="EventList" component={EventListScreen} options={{ title: 'Events' }} />
+      <Stack.Screen name="EventDetail" component={EventDetailScreen} options={{ title: 'Event Details' }} />
+      <Stack.Screen name="Restriction" component={RestrictionScreen} options={{ title: 'Active Restrictions' }} />
+      <Stack.Screen name="EmergencyApps" component={EmergencyAppsScreen} options={{ title: 'Emergency Apps' }} />
+      <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
+      <Stack.Screen name="Flashlight" component={FlashlightScreen} options={{ title: 'Flashlight' }} />
     </Stack.Navigator>
   );
 }

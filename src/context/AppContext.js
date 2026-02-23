@@ -10,7 +10,10 @@ const STORAGE_KEYS = {
   EMERGENCY_APPS: 'emergency_apps',
   USER_PROFILE: 'user_profile',
   REGISTERED_EVENTS: 'registered_events',
+  CAMERA_USAGE: 'camera_usage',
 };
+
+export const CAMERA_LIMIT_SECONDS = 15 * 60; // 15 minutes per event
 
 export function AppProvider({ children }) {
   const [consentGiven, setConsentGiven] = useState(false);
@@ -23,21 +26,25 @@ export function AppProvider({ children }) {
   const [restrictionActive, setRestrictionActive] = useState(false);
   const [allowedApps, setAllowedApps] = useState([]);
   const [events] = useState(SAMPLE_EVENTS);
+  // cameraUsage: { [eventId]: secondsUsed }
+  const [cameraUsage, setCameraUsage] = useState({});
 
   // Load persisted data on mount
   useEffect(() => {
     (async () => {
       try {
-        const [consent, eApps, profile, regEvents] = await Promise.all([
+        const [consent, eApps, profile, regEvents, camUsage] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.CONSENT_GIVEN),
           AsyncStorage.getItem(STORAGE_KEYS.EMERGENCY_APPS),
           AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
           AsyncStorage.getItem(STORAGE_KEYS.REGISTERED_EVENTS),
+          AsyncStorage.getItem(STORAGE_KEYS.CAMERA_USAGE),
         ]);
         if (consent === 'true') setConsentGiven(true);
         if (eApps) setEmergencyApps(JSON.parse(eApps));
         if (profile) setUserProfile(JSON.parse(profile));
         if (regEvents) setRegisteredEvents(JSON.parse(regEvents));
+        if (camUsage) setCameraUsage(JSON.parse(camUsage));
       } catch (e) {
         // Ignore storage errors
       } finally {
@@ -106,6 +113,16 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  const updateCameraUsage = useCallback(async (eventId, additionalSeconds) => {
+    setCameraUsage((prev) => {
+      const current = prev[eventId] ?? 0;
+      const updated = { ...prev, [eventId]: current + additionalSeconds };
+      // Persist outside the setState callback to avoid potential race conditions
+      AsyncStorage.setItem(STORAGE_KEYS.CAMERA_USAGE, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -126,6 +143,9 @@ export function AppProvider({ children }) {
         activeEvent,
         restrictionActive,
         allowedApps,
+        cameraUsage,
+        updateCameraUsage,
+        CAMERA_LIMIT_SECONDS,
       }}
     >
       {children}

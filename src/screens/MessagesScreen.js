@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   unreadText: { fontSize: 12, fontWeight: '700', color: '#FFFFFF' },
   accessNote: {
     fontSize: 12,
-    color: '#1E293B',
+    color: '#475569',
     textAlign: 'center',
     fontStyle: 'italic',
     paddingVertical: 8,

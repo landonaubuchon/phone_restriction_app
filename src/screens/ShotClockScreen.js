@@ -10,66 +10,63 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 import {
-  isEventActive,
   isEventUpcoming,
   secondsUntilEnd,
   secondsUntilStart,
-  formatCountdown,
+  formatHoursMinutes,
 } from '../utils/restrictionUtils';
 
-// ─── Shot Clock Display Component ────────────────────────────────────────────
-function ShotClock({ seconds, label, eventName, venue, isActive }) {
-  const timeStr = formatCountdown(seconds);
+// ─── Shot Clock ───────────────────────────────────────────────────────────────
+// Modeled after NBA/CBB arena shot clocks: square panel, bright red LED digits,
+// HH:MM display (no seconds), corner accent marks.
+function ShotClock({ seconds, label, eventName, isActive }) {
+  const timeStr = formatHoursMinutes(seconds);
+  const [hh, mm] = timeStr.split(':');
 
   return (
     <View style={clockStyles.wrapper}>
-      {/* Status label above clock */}
       <Text style={clockStyles.statusLabel}>{label}</Text>
 
-      {/* Rectangular shot clock panel */}
+      {/* Square panel */}
       <View style={[clockStyles.panel, isActive && clockStyles.panelActive]}>
-        {/* Corner brackets — decorative elements found on real shot clocks */}
-        <View style={[clockStyles.corner, clockStyles.cornerTL]} />
-        <View style={[clockStyles.corner, clockStyles.cornerTR]} />
-        <View style={[clockStyles.corner, clockStyles.cornerBL]} />
-        <View style={[clockStyles.corner, clockStyles.cornerBR]} />
+        {/* Corner accent marks — NBA Daktronics detail */}
+        <View style={[clockStyles.corner, clockStyles.cTL]} />
+        <View style={[clockStyles.corner, clockStyles.cTR]} />
+        <View style={[clockStyles.corner, clockStyles.cBL]} />
+        <View style={[clockStyles.corner, clockStyles.cBR]} />
 
-        {/* Top rule */}
-        <View style={clockStyles.topRule} />
-
-        {/* LED digit display */}
+        {/* LED digit blocks */}
         <View style={clockStyles.digitRow}>
-          {timeStr.split('').map((ch, i) => (
-            <Text
-              key={i}
-              style={[clockStyles.digit, ch === ':' && clockStyles.colon]}
-            >
-              {ch}
-            </Text>
-          ))}
+          <View style={clockStyles.digitBlock}>
+            <Text style={clockStyles.digit}>{hh}</Text>
+          </View>
+          <Text style={clockStyles.colon}>:</Text>
+          <View style={clockStyles.digitBlock}>
+            <Text style={clockStyles.digit}>{mm}</Text>
+          </View>
         </View>
 
-        {/* Bottom rule */}
-        <View style={clockStyles.bottomRule} />
+        {/* Unit labels */}
+        <View style={clockStyles.unitRow}>
+          <Text style={clockStyles.unitLabel}>HR</Text>
+          <View style={clockStyles.unitSpacer} />
+          <Text style={clockStyles.unitLabel}>MIN</Text>
+        </View>
       </View>
 
-      {/* Mounting bracket — visual detail like real arena shot clocks */}
+      {/* Bracket stems */}
       <View style={clockStyles.bracketRow}>
-        <View style={clockStyles.bracketLeft} />
-        <View style={clockStyles.bracketRight} />
+        <View style={clockStyles.bracket} />
+        <View style={clockStyles.bracket} />
       </View>
 
-      {/* BUZR brand */}
-      <Text style={clockStyles.buzrLogo}>BUZR</Text>
+      {/* Brand */}
+      <Text style={clockStyles.brand}>BUZR</Text>
 
-      {/* Event info below brand */}
       {eventName ? (
-        <View style={clockStyles.eventInfo}>
-          <Text style={clockStyles.eventName} numberOfLines={1}>{eventName}</Text>
-          {venue ? <Text style={clockStyles.eventVenue} numberOfLines={1}>📍 {venue}</Text> : null}
-        </View>
+        <Text style={clockStyles.eventName} numberOfLines={1}>{eventName}</Text>
       ) : (
-        <Text style={clockStyles.noEventText}>No active event</Text>
+        <Text style={clockStyles.noEvent}>No active event</Text>
       )}
     </View>
   );
@@ -84,13 +81,12 @@ export default function ShotClockScreen({ navigation }) {
     restrictionActive,
     emergencyApps,
     consentGiven,
-    userLocation,
+    notifications,
+    clearNotification,
   } = useAppContext();
 
   const [countdown, setCountdown] = useState(0);
-  const [flashlightOn, setFlashlightOn] = useState(false);
 
-  // Find the next upcoming registered event if no restriction is active
   const nextEvent = !activeEvent
     ? registeredEvents
         .map((id) => events.find((e) => e.id === id))
@@ -102,22 +98,13 @@ export default function ShotClockScreen({ navigation }) {
   const isActive = !!activeEvent;
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const tick = () => {
       if (displayEvent) {
-        setCountdown(
-          isActive
-            ? secondsUntilEnd(displayEvent)
-            : secondsUntilStart(displayEvent)
-        );
+        setCountdown(isActive ? secondsUntilEnd(displayEvent) : secondsUntilStart(displayEvent));
       }
-    }, 1000);
-    if (displayEvent) {
-      setCountdown(
-        isActive
-          ? secondsUntilEnd(displayEvent)
-          : secondsUntilStart(displayEvent)
-      );
-    }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
   }, [displayEvent, isActive]);
 
@@ -127,6 +114,7 @@ export default function ShotClockScreen({ navigation }) {
     ? 'NEXT EVENT STARTS IN'
     : 'NO ACTIVE EVENT';
 
+  // Emoji icons for each emergency app preset — displayed inside app chips
   const EMERGENCY_ICONS = {
     'Glucose Monitor': '🩸',
     Insulin: '💉',
@@ -135,139 +123,175 @@ export default function ShotClockScreen({ navigation }) {
     Wallet: '💳',
   };
 
+  // Notification items for the home screen row
+  const notifItems = [
+    {
+      type: 'phone',
+      icon: 'call',
+      color: '#22C55E',
+      count: notifications.phone,
+      label: 'Missed',
+      tab: 'Phone',
+    },
+    {
+      type: 'messages',
+      icon: 'chatbubble',
+      color: '#3B82F6',
+      count: notifications.messages,
+      label: 'Unread',
+      tab: 'Messages',
+    },
+    {
+      type: 'ticket',
+      icon: 'ticket',
+      color: '#F59E0B',
+      count: notifications.ticket ? 1 : 0,
+      label: 'Alert',
+      tab: 'Ticket',
+    },
+    {
+      type: 'camera',
+      icon: 'camera',
+      color: '#A855F7',
+      count: notifications.camera ? 1 : 0,
+      label: 'Notice',
+      tab: 'Camera',
+    },
+  ].filter((n) => n.count > 0);
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header row */}
-      <View style={styles.headerRow}>
+      {/* ── Header ── */}
+      <View style={styles.header}>
         <TouchableOpacity
-          style={styles.headerBtn}
+          style={styles.headerIconBtn}
           onPress={() => navigation.navigate('EventList')}
           accessibilityLabel="Browse events"
         >
-          <Ionicons name="calendar-outline" size={22} color="#94A3B8" />
-          <Text style={styles.headerBtnLabel}>Events</Text>
+          <Ionicons name="calendar-outline" size={24} color="#3F3F5A" />
+          {!consentGiven && <View style={styles.warningDot} />}
         </TouchableOpacity>
 
-        <View style={styles.headerSpacer} />
-
-        {!consentGiven && (
-          <View style={styles.consentDot}>
-            <Text style={styles.consentDotText}>!</Text>
-          </View>
-        )}
+        <View style={styles.headerCenter}>
+          <Text style={styles.headerTitle}>BUZR</Text>
+        </View>
 
         <TouchableOpacity
-          style={styles.headerBtn}
+          style={styles.headerIconBtn}
           onPress={() => navigation.navigate('Profile')}
           accessibilityLabel="Profile"
         >
-          <Ionicons name="person-outline" size={22} color="#94A3B8" />
-          <Text style={styles.headerBtnLabel}>Profile</Text>
+          <Ionicons name="person-circle-outline" size={26} color="#3F3F5A" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* ── Shot Clock ── */}
         <ShotClock
           seconds={displayEvent ? countdown : 0}
           label={clockLabel}
           eventName={displayEvent?.name}
-          venue={displayEvent?.venue}
           isActive={isActive}
         />
 
-        {/* ── Restriction status badge ── */}
-        {isActive && (
-          <TouchableOpacity
-            style={styles.restrictionBanner}
-            onPress={() => navigation.navigate('Restriction')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="lock-closed" size={16} color="#DDD6FE" />
-            <Text style={styles.restrictionBannerText}>
-              Restrictions Active — Tap for details
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color="#DDD6FE" />
-          </TouchableOpacity>
-        )}
-
-        {/* ── Flashlight quick toggle ── */}
-        <TouchableOpacity
-          style={[styles.flashlightToggle, flashlightOn && styles.flashlightOn]}
-          onPress={() => {
-            setFlashlightOn((v) => !v);
-            navigation.navigate('Flashlight');
-          }}
-          accessibilityLabel="Toggle flashlight"
-        >
-          <Ionicons
-            name={flashlightOn ? 'flashlight' : 'flashlight-outline'}
-            size={22}
-            color={flashlightOn ? '#0F172A' : '#F1F5F9'}
-          />
-          <Text
-            style={[
-              styles.flashlightToggleText,
-              flashlightOn && styles.flashlightOnText,
-            ]}
-          >
-            {flashlightOn ? 'Flashlight On' : 'Flashlight Off'}
-          </Text>
-        </TouchableOpacity>
-
-        {/* ── Emergency Apps ── */}
-        {(emergencyApps || []).length > 0 && (
-          <View style={styles.emergencySection}>
-            <View style={styles.emergencySectionHeader}>
-              <Ionicons name="medkit-outline" size={16} color="#FCA5A5" />
-              <Text style={styles.emergencySectionTitle}>Emergency Apps</Text>
-              <TouchableOpacity
-                onPress={() => navigation.navigate('EmergencyApps')}
-              >
-                <Text style={styles.manageLink}>Manage</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.emergencyAppRow}>
-              {(emergencyApps || []).map((app, i) => (
-                <View key={i} style={styles.emergencyAppChip}>
-                  <Text style={styles.emergencyAppIcon}>
-                    {EMERGENCY_ICONS[app] || '📱'}
-                  </Text>
-                  <Text style={styles.emergencyAppName}>{app}</Text>
-                </View>
+        {/* ── Notification row ── */}
+        {notifItems.length > 0 && (
+          <View style={styles.notifSection}>
+            <Text style={styles.notifSectionTitle}>NOTIFICATIONS</Text>
+            <View style={styles.notifRow}>
+              {notifItems.map((item) => (
+                <TouchableOpacity
+                  key={item.type}
+                  style={[styles.notifCard, { borderColor: item.color + '55' }]}
+                  onPress={() => {
+                    clearNotification(item.type);
+                    navigation.navigate(item.tab);
+                  }}
+                  activeOpacity={0.75}
+                >
+                  <View style={[styles.notifIconCircle, { backgroundColor: item.color + '22' }]}>
+                    <Ionicons name={item.icon} size={18} color={item.color} />
+                  </View>
+                  <View style={[styles.notifBadge, { backgroundColor: item.color }]}>
+                    <Text style={styles.notifBadgeText}>{item.count}</Text>
+                  </View>
+                  <Text style={[styles.notifCardLabel, { color: item.color }]}>{item.label}</Text>
+                </TouchableOpacity>
               ))}
             </View>
           </View>
         )}
 
-        {/* ── No emergency apps — prompt to add ── */}
-        {(emergencyApps || []).length === 0 && (
+        {/* ── Active restriction pill ── */}
+        {isActive && (
           <TouchableOpacity
-            style={styles.addEmergencyPrompt}
-            onPress={() => navigation.navigate('EmergencyApps')}
+            style={styles.restrictionPill}
+            onPress={() => navigation.navigate('Restriction')}
+            activeOpacity={0.8}
           >
-            <Ionicons name="medkit-outline" size={18} color="#64748B" />
-            <Text style={styles.addEmergencyText}>
-              Add emergency apps for medical access
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color="#64748B" />
+            <Ionicons name="lock-closed" size={14} color="#EF4444" />
+            <Text style={styles.restrictionPillText}>Restrictions Active</Text>
+            <Ionicons name="chevron-forward" size={14} color="#3F3F5A" />
           </TouchableOpacity>
         )}
 
-        {/* ── Register for events call-to-action ── */}
+        {/* ── Quick-action grid ── */}
+        <View style={styles.quickGrid}>
+          {/* Flashlight */}
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={() => navigation.navigate('Flashlight')}
+            accessibilityLabel="Flashlight"
+          >
+            <Ionicons name="flashlight-outline" size={26} color="#F1F5F9" />
+            <Text style={styles.quickCardLabel}>Torch</Text>
+          </TouchableOpacity>
+
+          {/* Emergency apps */}
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={() => navigation.navigate('EmergencyApps')}
+            accessibilityLabel="Emergency apps"
+          >
+            <Ionicons name="medkit-outline" size={26} color="#F87171" />
+            <Text style={styles.quickCardLabel}>Medical</Text>
+            {(emergencyApps || []).length > 0 && (
+              <View style={styles.quickCardBadge}>
+                <Text style={styles.quickCardBadgeText}>{emergencyApps.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* Events */}
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={() => navigation.navigate('EventList')}
+            accessibilityLabel="Events"
+          >
+            <Ionicons name="calendar-outline" size={26} color="#818CF8" />
+            <Text style={styles.quickCardLabel}>Events</Text>
+          </TouchableOpacity>
+
+          {/* Profile */}
+          <TouchableOpacity
+            style={styles.quickCard}
+            onPress={() => navigation.navigate('Profile')}
+            accessibilityLabel="Profile"
+          >
+            <Ionicons name="person-outline" size={26} color="#94A3B8" />
+            <Text style={styles.quickCardLabel}>Profile</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* ── Register CTA ── */}
         {registeredEvents.length === 0 && (
           <TouchableOpacity
             style={styles.registerCTA}
             onPress={() => navigation.navigate('EventList')}
           >
-            <Ionicons name="calendar" size={20} color="#A78BFA" />
-            <Text style={styles.registerCTAText}>
-              Register for an event to activate restrictions
-            </Text>
-            <Ionicons name="chevron-forward" size={16} color="#A78BFA" />
+            <Ionicons name="add-circle-outline" size={18} color="#818CF8" />
+            <Text style={styles.registerCTAText}>Register for an event</Text>
+            <Ionicons name="chevron-forward" size={14} color="#3F3F5A" />
           </TouchableOpacity>
         )}
       </ScrollView>
@@ -276,292 +300,258 @@ export default function ShotClockScreen({ navigation }) {
 }
 
 // ─── Shot clock styles ────────────────────────────────────────────────────────
+const PANEL_SIZE = 240; // square
+
 const clockStyles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingTop: 8,
-  },
+  wrapper: { alignItems: 'center', marginBottom: 24, paddingTop: 4 },
   statusLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748B',
-    letterSpacing: 2.5,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#3F3F5A',
+    letterSpacing: 3,
     textTransform: 'uppercase',
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  // Outer rectangular panel — resembles the Daktronics arena shot clock
+  // Square panel — NBA/CBB shot clock aesthetic
   panel: {
-    backgroundColor: '#000',
-    borderWidth: 3,
-    borderColor: '#475569',
-    borderRadius: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 18,
-    width: 320,
+    width: PANEL_SIZE,
+    height: PANEL_SIZE,
+    backgroundColor: '#0A0007',
+    borderWidth: 2,
+    borderColor: '#2A2A3A',
+    borderRadius: 12,
     alignItems: 'center',
-    // Subtle shadow
-    shadowColor: '#F97316',
+    justifyContent: 'center',
+    shadowColor: '#EF4444',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0,
     shadowRadius: 0,
     elevation: 0,
   },
   panelActive: {
-    borderColor: '#F97316',
-    shadowOpacity: 0.6,
-    shadowRadius: 16,
-    elevation: 10,
+    borderColor: '#EF4444',
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 12,
   },
-  // Decorative corner brackets
+  // Corner accent marks
   corner: {
     position: 'absolute',
-    width: 12,
-    height: 12,
-    borderColor: '#F97316',
+    width: 14,
+    height: 14,
+    borderColor: '#EF4444',
+    opacity: 0.7,
   },
-  cornerTL: {
-    top: 6,
-    left: 6,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-  },
-  cornerTR: {
-    top: 6,
-    right: 6,
-    borderTopWidth: 2,
-    borderRightWidth: 2,
-  },
-  cornerBL: {
-    bottom: 6,
-    left: 6,
-    borderBottomWidth: 2,
-    borderLeftWidth: 2,
-  },
-  cornerBR: {
-    bottom: 6,
-    right: 6,
-    borderBottomWidth: 2,
-    borderRightWidth: 2,
-  },
-  topRule: {
-    width: '100%',
-    height: 1,
-    backgroundColor: '#1E293B',
-    marginBottom: 12,
-  },
-  // LED digit row
-  digitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  cTL: { top: 8, left: 8, borderTopWidth: 2, borderLeftWidth: 2 },
+  cTR: { top: 8, right: 8, borderTopWidth: 2, borderRightWidth: 2 },
+  cBL: { bottom: 8, left: 8, borderBottomWidth: 2, borderLeftWidth: 2 },
+  cBR: { bottom: 8, right: 8, borderBottomWidth: 2, borderRightWidth: 2 },
+  // Digit layout
+  digitRow: { flexDirection: 'row', alignItems: 'center' },
+  digitBlock: { alignItems: 'center' },
   digit: {
-    fontSize: 56,
+    fontSize: 72,
     fontWeight: '900',
-    color: '#F97316',
+    color: '#EF4444',
     fontVariant: ['tabular-nums'],
-    letterSpacing: 1,
-    // Simulate LED glow via text shadow (web) — platform handled gracefully
-    textShadowColor: '#F97316',
+    lineHeight: 76,
+    textShadowColor: '#EF4444',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+  },
+  colon: {
+    fontSize: 64,
+    fontWeight: '900',
+    color: '#B91C1C',
+    marginHorizontal: 4,
+    marginBottom: 6,
+    textShadowColor: '#EF4444',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
-  colon: {
-    fontSize: 52,
-    color: '#EA580C',
-    marginHorizontal: 2,
-    marginBottom: 4,
-  },
-  bottomRule: {
-    width: '100%',
-    height: 1,
-    backgroundColor: '#1E293B',
-    marginTop: 12,
-  },
-  // Mounting bracket — vertical stems below the clock panel
-  bracketRow: {
+  unitRow: {
     flexDirection: 'row',
-    gap: 24,
-    marginTop: 0,
+    marginTop: 6,
+    width: 180,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
   },
-  bracketLeft: {
-    width: 3,
-    height: 16,
-    backgroundColor: '#475569',
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
+  unitLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#4A1515',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    width: 60,
+    textAlign: 'center',
   },
-  bracketRight: {
-    width: 3,
-    height: 16,
-    backgroundColor: '#475569',
-    borderBottomLeftRadius: 2,
-    borderBottomRightRadius: 2,
-  },
-  // BUZR brand name beneath the clock
-  buzrLogo: {
-    fontSize: 30,
+  unitSpacer: { width: 20 },
+  // Bracket stems
+  bracketRow: { flexDirection: 'row', gap: 20, marginTop: 0 },
+  bracket: { width: 3, height: 14, backgroundColor: '#2A2A3A', borderRadius: 2 },
+  // Brand
+  brand: {
+    fontSize: 22,
     fontWeight: '900',
     color: '#F1F5F9',
-    letterSpacing: 10,
-    textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 8,
+    letterSpacing: 12,
+    marginTop: 8,
+    marginBottom: 4,
   },
-  eventInfo: { alignItems: 'center', marginTop: 4 },
   eventName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#CBD5E1',
-    textAlign: 'center',
-    maxWidth: 300,
-  },
-  eventVenue: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '600',
     color: '#475569',
-    marginTop: 2,
     textAlign: 'center',
     maxWidth: 280,
   },
-  noEventText: {
-    fontSize: 13,
-    color: '#334155',
-    fontStyle: 'italic',
-    marginTop: 4,
-  },
+  noEvent: { fontSize: 12, color: '#1E293B', fontStyle: 'italic' },
 });
 
-// ─── Screen styles ────────────────────────────────────────────────────────────
+// ─── Screen styles ─────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
-  headerRow: {
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    paddingTop: 12,
+    paddingBottom: 8,
   },
-  headerBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  headerBtnLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
-  headerSpacer: { flex: 1 },
-  consentDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  headerIconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  warningDot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#F59E0B',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
   },
-  consentDotText: { fontSize: 11, fontWeight: '900', color: '#0F172A' },
-  scroll: { paddingHorizontal: 20, paddingBottom: 32, paddingTop: 20 },
-  restrictionBanner: {
-    backgroundColor: '#4C1D95',
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 8,
-    marginBottom: 14,
-  },
-  restrictionBannerText: {
-    flex: 1,
-    color: '#DDD6FE',
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '900',
+    color: '#1E1E2E',
+    letterSpacing: 6,
+    textTransform: 'uppercase',
   },
-  flashlightToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  flashlightOn: {
-    backgroundColor: '#FDE68A',
-    borderColor: '#F59E0B',
-  },
-  flashlightToggleText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#F1F5F9',
-  },
-  flashlightOnText: { color: '#0F172A' },
-  emergencySection: {
-    backgroundColor: '#1E293B',
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 14,
-    borderLeftWidth: 3,
-    borderLeftColor: '#F87171',
-  },
-  emergencySectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  scroll: { paddingHorizontal: 20, paddingBottom: 32, paddingTop: 8, alignItems: 'center' },
+
+  // Notification row
+  notifSection: { width: '100%', marginBottom: 16 },
+  notifSectionTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#3F3F5A',
+    letterSpacing: 2,
     marginBottom: 10,
   },
-  emergencySectionTitle: {
+  notifRow: { flexDirection: 'row', gap: 10 },
+  notifCard: {
     flex: 1,
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FCA5A5',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    backgroundColor: '#0F0F1A',
+    borderRadius: 14,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    position: 'relative',
   },
-  manageLink: { fontSize: 12, color: '#818CF8', fontWeight: '600' },
-  emergencyAppRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  emergencyAppChip: {
+  notifIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
+  notifBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notifBadgeText: { fontSize: 10, fontWeight: '900', color: '#FFFFFF' },
+  notifCardLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 0.5 },
+
+  // Restriction pill
+  restrictionPill: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#1A0808',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#EF444433',
+    alignSelf: 'stretch',
+  },
+  restrictionPillText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#EF4444',
+    letterSpacing: 0.5,
+  },
+
+  // Quick action grid
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    width: '100%',
+    marginBottom: 14,
+  },
+  quickCard: {
+    flex: 1,
+    minWidth: '22%',
+    backgroundColor: '#0F0F1A',
+    borderRadius: 16,
+    paddingVertical: 16,
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#0F172A',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  emergencyAppIcon: { fontSize: 16 },
-  emergencyAppName: { fontSize: 13, color: '#CBD5E1', fontWeight: '500' },
-  addEmergencyPrompt: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: '#1E293B',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#1E293B',
-    borderStyle: 'dashed',
+    borderColor: '#1E1E2E',
+    position: 'relative',
   },
-  addEmergencyText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#475569',
+  quickCardLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#3F3F5A',
+    letterSpacing: 0.5,
   },
+  quickCardBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickCardBadgeText: { fontSize: 9, fontWeight: '900', color: '#FFFFFF' },
+
+  // Register CTA
   registerCTA: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: '#1E1433',
+    backgroundColor: '#0F0F1A',
     borderRadius: 12,
     padding: 14,
+    width: '100%',
     borderWidth: 1,
-    borderColor: '#4C1D95',
+    borderColor: '#1E1E2E',
   },
-  registerCTAText: {
-    flex: 1,
-    fontSize: 13,
-    color: '#A78BFA',
-    fontWeight: '500',
-  },
+  registerCTAText: { flex: 1, fontSize: 13, color: '#3F3F5A' },
 });
+

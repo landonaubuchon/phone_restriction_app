@@ -139,7 +139,7 @@ export default function PhoneScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#0A0A0F',
     alignItems: 'center',
     paddingBottom: 8,
   },
@@ -188,7 +188,9 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1E293B',
+    backgroundColor: '#0F0F1A',
+    borderWidth: 1,
+    borderColor: '#1E1E2E',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
   },
   dialKeySub: {
     fontSize: 10,
-    color: '#64748B',
+    color: '#3F3F5A',
     letterSpacing: 1.5,
     fontWeight: '500',
   },
@@ -218,8 +220,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   accessNote: {
-    fontSize: 12,
-    color: '#334155',
+    fontSize: 11,
+    color: '#3F3F5A',
     textAlign: 'center',
     fontStyle: 'italic',
     marginTop: 8,

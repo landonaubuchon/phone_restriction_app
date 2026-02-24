@@ -189,7 +189,7 @@ const barcodeStyles = StyleSheet.create({
 // ─── Ticket card styles ────────────────────────────────────────────────────
 const ticketStyles = StyleSheet.create({
   card: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#0F0F1A',
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 20,
@@ -264,13 +264,13 @@ const ticketStyles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 0,
     height: 20,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#0A0A0F',
   },
   tearCircleLeft: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#0A0A0F',
     marginLeft: -10,
   },
   tearDashes: {
@@ -284,7 +284,7 @@ const ticketStyles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#0F172A',
+    backgroundColor: '#0A0A0F',
     marginRight: -10,
   },
   bottomHalf: {
@@ -319,7 +319,7 @@ const ticketStyles = StyleSheet.create({
 
 // ─── Screen styles ─────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -328,15 +328,17 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E293B',
+    borderBottomColor: '#1E1E2E',
   },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#F1F5F9' },
   scroll: { padding: 16, paddingBottom: 48 },
   countLabel: {
-    fontSize: 13,
-    color: '#64748B',
+    fontSize: 10,
+    color: '#3F3F5A',
     marginBottom: 12,
-    fontWeight: '500',
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
   emptyState: {
     flex: 1,
@@ -353,14 +355,14 @@ const styles = StyleSheet.create({
   },
   emptyBody: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#3F3F5A',
     textAlign: 'center',
     lineHeight: 21,
     marginBottom: 24,
   },
   browseButton: {
-    backgroundColor: '#6D28D9',
-    borderRadius: 14,
+    backgroundColor: '#EF4444',
+    borderRadius: 24,
     paddingVertical: 14,
     paddingHorizontal: 32,
   },
@@ -372,5 +374,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 14,
   },
-  addMoreText: { color: '#A78BFA', fontSize: 14, fontWeight: '600' },
+  addMoreText: { color: '#818CF8', fontSize: 14, fontWeight: '600' },
 });

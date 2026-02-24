@@ -28,6 +28,16 @@ export function AppProvider({ children }) {
   const [events] = useState(SAMPLE_EVENTS);
   // cameraUsage: { [eventId]: secondsUsed }
   const [cameraUsage, setCameraUsage] = useState({});
+  // notifications: per-tab alert counts/flags.
+  // Initial values are seeded with demo data so the notification system is
+  // visible on first launch. In production these would start at 0/false and
+  // be incremented by real push-notification or event callbacks.
+  const [notifications, setNotifications] = useState({
+    phone: 2,      // 2 missed calls (demo)
+    messages: 3,   // 3 unread messages (demo)
+    ticket: true,  // ticket alert, e.g. gate change (demo)
+    camera: false,
+  });
 
   // Load persisted data on mount
   useEffect(() => {
@@ -123,6 +133,28 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  /** Increment or set a notification for a given tab category. */
+  const addNotification = useCallback((type) => {
+    setNotifications((prev) => {
+      if (type === 'phone') return { ...prev, phone: prev.phone + 1 };
+      if (type === 'messages') return { ...prev, messages: prev.messages + 1 };
+      if (type === 'ticket') return { ...prev, ticket: true };
+      if (type === 'camera') return { ...prev, camera: true };
+      return prev;
+    });
+  }, []);
+
+  /** Clear the notification for a given tab category. */
+  const clearNotification = useCallback((type) => {
+    setNotifications((prev) => {
+      if (type === 'phone') return { ...prev, phone: 0 };
+      if (type === 'messages') return { ...prev, messages: 0 };
+      if (type === 'ticket') return { ...prev, ticket: false };
+      if (type === 'camera') return { ...prev, camera: false };
+      return prev;
+    });
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -146,6 +178,9 @@ export function AppProvider({ children }) {
         cameraUsage,
         updateCameraUsage,
         CAMERA_LIMIT_SECONDS,
+        notifications,
+        addNotification,
+        clearNotification,
       }}
     >
       {children}

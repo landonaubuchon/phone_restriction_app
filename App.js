@@ -47,44 +47,92 @@ function tabIcon(routeName, focused) {
 
 // ─── Bottom Tab Navigator ─────────────────────────────────────────────────────
 function MainTabs() {
+  const { notifications, clearNotification } = useAppContext();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#0F172A',
-          borderTopColor: '#1E293B',
+          backgroundColor: '#0A0A0F',
+          borderTopColor: '#1E1E2E',
           borderTopWidth: 1,
-          paddingBottom: 6,
-          paddingTop: 6,
-          height: 64,
+          paddingBottom: 8,
+          paddingTop: 8,
+          height: 68,
         },
-        tabBarActiveTintColor: '#F97316',
-        tabBarInactiveTintColor: '#475569',
+        tabBarActiveTintColor: '#EF4444',
+        tabBarInactiveTintColor: '#3F3F5A',
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          letterSpacing: 0.3,
+          fontSize: 10,
+          fontWeight: '700',
+          letterSpacing: 0.5,
+          textTransform: 'uppercase',
+        },
+        tabBarBadgeStyle: {
+          backgroundColor: '#EF4444',
+          fontSize: 10,
+          fontWeight: '700',
+          minWidth: 18,
+          height: 18,
+          lineHeight: 18,
+          borderRadius: 9,
         },
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons name={tabIcon(route.name, focused)} size={size} color={color} />
         ),
       })}
     >
-      {/* ① BUZR — shot clock home screen; centered BUZR branding with event countdown */}
-      <Tab.Screen name="BUZR" component={ShotClockScreen} options={{ tabBarLabel: 'BUZR' }} />
+      {/* ① BUZR — shot clock home screen */}
+      <Tab.Screen
+        name="BUZR"
+        component={ShotClockScreen}
+        options={{ tabBarLabel: 'BUZR' }}
+      />
 
       {/* ② Camera — silhouette camera icon; 15-minute per-event usage limit */}
-      <Tab.Screen name="Camera" component={CameraScreen} options={{ tabBarLabel: 'Camera' }} />
+      <Tab.Screen
+        name="Camera"
+        component={CameraScreen}
+        options={{
+          tabBarLabel: 'Camera',
+          tabBarBadge: notifications.camera ? '!' : undefined,
+        }}
+        listeners={{ tabPress: () => clearNotification('camera') }}
+      />
 
-      {/* ③ Phone — silhouette of a phone; dial pad that opens native phone dialer */}
-      <Tab.Screen name="Phone" component={PhoneScreen} options={{ tabBarLabel: 'Phone' }} />
+      {/* ③ Phone — silhouette of a phone; shows missed call badge */}
+      <Tab.Screen
+        name="Phone"
+        component={PhoneScreen}
+        options={{
+          tabBarLabel: 'Phone',
+          tabBarBadge: notifications.phone > 0 ? notifications.phone : undefined,
+        }}
+        listeners={{ tabPress: () => clearNotification('phone') }}
+      />
 
-      {/* ④ Messages — text bubble icon; opens native Messages app for SMS */}
-      <Tab.Screen name="Messages" component={MessagesScreen} options={{ tabBarLabel: 'Messages' }} />
+      {/* ④ Messages — text bubble; shows unread count badge */}
+      <Tab.Screen
+        name="Messages"
+        component={MessagesScreen}
+        options={{
+          tabBarLabel: 'Messages',
+          tabBarBadge: notifications.messages > 0 ? notifications.messages : undefined,
+        }}
+        listeners={{ tabPress: () => clearNotification('messages') }}
+      />
 
-      {/* ⑤ Ticket — access to your registered event ticket with barcode */}
-      <Tab.Screen name="Ticket" component={TicketScreen} options={{ tabBarLabel: 'Ticket' }} />
+      {/* ⑤ Ticket — shows alert dot if there's a ticket issue */}
+      <Tab.Screen
+        name="Ticket"
+        component={TicketScreen}
+        options={{
+          tabBarLabel: 'Ticket',
+          tabBarBadge: notifications.ticket ? '!' : undefined,
+        }}
+        listeners={{ tabPress: () => clearNotification('ticket') }}
+      />
     </Tab.Navigator>
   );
 }
@@ -95,8 +143,8 @@ function RootNavigator() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0F172A', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator size="large" color="#F97316" />
+      <View style={{ flex: 1, backgroundColor: '#0A0A0F', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator size="large" color="#EF4444" />
       </View>
     );
   }
@@ -105,10 +153,10 @@ function RootNavigator() {
     <Stack.Navigator
       initialRouteName={consentGiven ? 'Home' : 'Welcome'}
       screenOptions={{
-        headerStyle: { backgroundColor: '#0F172A' },
+        headerStyle: { backgroundColor: '#0A0A0F' },
         headerTintColor: '#F1F5F9',
         headerTitleStyle: { fontWeight: '700' },
-        contentStyle: { backgroundColor: '#0F172A' },
+        contentStyle: { backgroundColor: '#0A0A0F' },
       }}
     >
       {/* Onboarding consent screen */}

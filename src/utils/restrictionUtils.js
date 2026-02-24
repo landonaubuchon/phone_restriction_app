@@ -61,6 +61,16 @@ export function formatCountdown(seconds) {
 }
 
 /**
+ * Formats seconds into HH:MM string (hours and minutes only).
+ * Used by the shot clock display.
+ */
+export function formatHoursMinutes(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+/**
  * Calculates the distance in meters between two lat/lon coordinates
  * using the Haversine formula.
  */

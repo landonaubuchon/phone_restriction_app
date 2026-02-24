@@ -5,6 +5,13 @@
 export const BUFFER_MINUTES = 30;
 
 /**
+ * Extra metres added to proximityRadiusMeters when comparing against Haversine
+ * distance. Absorbs floating-point rounding at the exact boundary edge so a
+ * user standing right at the radius limit is correctly included.
+ */
+export const PROXIMITY_TOLERANCE_METERS = 1;
+
+/**
  * Returns true if the current time is within the event window
  * (including the 30-minute buffer after the event ends).
  */
@@ -94,7 +101,7 @@ export function getDistanceMeters(lat1, lon1, lat2, lon2) {
  */
 export function isWithinProximity(userLat, userLon, event) {
   const distance = getDistanceMeters(userLat, userLon, event.latitude, event.longitude);
-  return distance <= event.proximityRadiusMeters + 1;
+  return distance <= event.proximityRadiusMeters + PROXIMITY_TOLERANCE_METERS;
 }
 
 /**

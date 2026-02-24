@@ -11,9 +11,13 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'user_profile',
   REGISTERED_EVENTS: 'registered_events',
   CAMERA_USAGE: 'camera_usage',
+  TICKET_ACTIVATED: 'ticket_activated', // { [eventId]: true }
 };
 
 export const CAMERA_LIMIT_SECONDS = 15 * 60; // 15 minutes per event
+
+/** How often (ms) the restriction engine re-evaluates while the app is idle. */
+const RESTRICTION_CHECK_INTERVAL_MS = 10_000;
 
 export function AppProvider({ children }) {
   const [consentGiven, setConsentGiven] = useState(false);
@@ -28,6 +32,9 @@ export function AppProvider({ children }) {
   const [events] = useState(SAMPLE_EVENTS);
   // cameraUsage: { [eventId]: secondsUsed }
   const [cameraUsage, setCameraUsage] = useState({});
+  // ticketActivated: { [eventId]: true } — set when user scans ticket at gate.
+  // Once activated, restrictions trigger immediately without GPS proximity.
+  const [ticketActivated, setTicketActivated] = useState({});
   // notifications: per-tab alert counts/flags.
   // Initial values are seeded with demo data so the notification system is
   // visible on first launch. In production these would start at 0/false and
@@ -43,18 +50,20 @@ export function AppProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const [consent, eApps, profile, regEvents, camUsage] = await Promise.all([
+        const [consent, eApps, profile, regEvents, camUsage, ticketAct] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.CONSENT_GIVEN),
           AsyncStorage.getItem(STORAGE_KEYS.EMERGENCY_APPS),
           AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
           AsyncStorage.getItem(STORAGE_KEYS.REGISTERED_EVENTS),
           AsyncStorage.getItem(STORAGE_KEYS.CAMERA_USAGE),
+          AsyncStorage.getItem(STORAGE_KEYS.TICKET_ACTIVATED),
         ]);
         if (consent === 'true') setConsentGiven(true);
         if (eApps) setEmergencyApps(JSON.parse(eApps));
         if (profile) setUserProfile(JSON.parse(profile));
         if (regEvents) setRegisteredEvents(JSON.parse(regEvents));
         if (camUsage) setCameraUsage(JSON.parse(camUsage));
+        if (ticketAct) setTicketActivated(JSON.parse(ticketAct));
       } catch (e) {
         // Ignore storage errors
       } finally {
@@ -80,7 +89,8 @@ export function AppProvider({ children }) {
         .filter((event) => {
           const lat = userLocation?.latitude ?? null;
           const lon = userLocation?.longitude ?? null;
-          return shouldRestrictionsBeActive(event, lat, lon);
+          const isTicketActivated = !!ticketActivated[event.id];
+          return shouldRestrictionsBeActive(event, lat, lon, isTicketActivated);
         });
 
       // Pick the most-recently-started event so the venue the user is
@@ -101,9 +111,9 @@ export function AppProvider({ children }) {
     };
 
     evaluate(); // run immediately on state change
-    const tick = setInterval(evaluate, 10_000); // re-evaluate every 10 s while idle
+    const tick = setInterval(evaluate, RESTRICTION_CHECK_INTERVAL_MS); // re-evaluate while idle
     return () => clearInterval(tick);
-  }, [consentGiven, registeredEvents, events, userLocation, emergencyApps]);
+  }, [consentGiven, registeredEvents, events, userLocation, emergencyApps, ticketActivated]);
 
   const giveConsent = useCallback(async () => {
     setConsentGiven(true);
@@ -148,6 +158,24 @@ export function AppProvider({ children }) {
       const updated = { ...prev, [eventId]: current + additionalSeconds };
       // Persist outside the setState callback to avoid potential race conditions
       AsyncStorage.setItem(STORAGE_KEYS.CAMERA_USAGE, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
+  /** Mark a ticket as activated (scanned at gate). Restrictions activate immediately. */
+  const activateTicket = useCallback(async (eventId) => {
+    setTicketActivated((prev) => {
+      const updated = { ...prev, [eventId]: true };
+      AsyncStorage.setItem(STORAGE_KEYS.TICKET_ACTIVATED, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
+  /** Deactivate a ticket (e.g. user exits venue for an emergency). */
+  const deactivateTicket = useCallback(async (eventId) => {
+    setTicketActivated((prev) => {
+      const updated = { ...prev, [eventId]: false };
+      AsyncStorage.setItem(STORAGE_KEYS.TICKET_ACTIVATED, JSON.stringify(updated)).catch(() => {});
       return updated;
     });
   }, []);
@@ -197,6 +225,9 @@ export function AppProvider({ children }) {
         cameraUsage,
         updateCameraUsage,
         CAMERA_LIMIT_SECONDS,
+        ticketActivated,
+        activateTicket,
+        deactivateTicket,
         notifications,
         addNotification,
         clearNotification,

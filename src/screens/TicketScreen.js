@@ -6,6 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
@@ -31,11 +32,34 @@ function Barcode() {
   );
 }
 
-function TicketCard({ event }) {
+function TicketCard({ event, isActivated, onActivate, onDeactivate }) {
   const typeColor = EVENT_TYPE_COLORS[event.type] || '#6D28D9';
   const typeIcon = EVENT_TYPE_ICONS[event.type] || '📅';
   const active = isEventActive(event);
   const upcoming = isEventUpcoming(event);
+  const canActivate = active || upcoming;
+
+  const handleActivatePress = () => {
+    if (isActivated) {
+      Alert.alert(
+        'Deactivate Ticket?',
+        'This will pause BUZR restrictions for this event. Only do this if you are leaving the venue (e.g. emergency exit).',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Deactivate', style: 'destructive', onPress: onDeactivate },
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Activate at Gate',
+        'Scan this ticket at the venue entrance to activate BUZR restrictions. Tap "Activate" to confirm you have entered the venue.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Activate', onPress: onActivate },
+        ]
+      );
+    }
+  };
 
   return (
     <View style={[ticketStyles.card, { borderTopColor: typeColor }]}>
@@ -55,6 +79,13 @@ function TicketCard({ event }) {
             {upcoming && !active && (
               <View style={[ticketStyles.statusBadge, { backgroundColor: '#1C1917' }]}>
                 <Text style={ticketStyles.statusText}>⏳ STARTING SOON</Text>
+              </View>
+            )}
+            {/* Ticket-activated badge */}
+            {isActivated && (
+              <View style={ticketStyles.activatedBadge}>
+                <Ionicons name="lock-closed" size={11} color="#FCA5A5" />
+                <Text style={ticketStyles.activatedText}>BUZR ACTIVE</Text>
               </View>
             )}
             {/* BUZR Verified stamp */}
@@ -104,7 +135,7 @@ function TicketCard({ event }) {
         <View style={ticketStyles.tearCircleRight} />
       </View>
 
-      {/* Ticket bottom half — barcode + ticket code */}
+      {/* Ticket bottom half — barcode + ticket code + activation */}
       <View style={ticketStyles.bottomHalf}>
         <Text style={ticketStyles.ticketCodeLabel}>TICKET CODE</Text>
         <Text style={ticketStyles.ticketCode}>{event.ticketCode}</Text>
@@ -112,13 +143,37 @@ function TicketCard({ event }) {
         <Text style={ticketStyles.barcodeDigits}>
           {event.ticketCode.replace(/[^0-9]/g, '').padStart(12, '0')}
         </Text>
+
+        {/* Gate activation button — only shown when event is active/upcoming */}
+        {canActivate && (
+          <TouchableOpacity
+            style={[
+              ticketStyles.activateButton,
+              isActivated && ticketStyles.activateButtonActive,
+            ]}
+            onPress={handleActivatePress}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name={isActivated ? 'lock-closed' : 'scan-outline'}
+              size={16}
+              color={isActivated ? '#FCA5A5' : '#0F172A'}
+            />
+            <Text style={[
+              ticketStyles.activateButtonText,
+              isActivated && ticketStyles.activateButtonTextActive,
+            ]}>
+              {isActivated ? 'BUZR Restrictions Active' : 'Activate at Gate'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
 }
 
 export default function TicketScreen({ navigation }) {
-  const { registeredEvents, events } = useAppContext();
+  const { registeredEvents, events, ticketActivated, activateTicket, deactivateTicket } = useAppContext();
 
   const myEvents = registeredEvents
     .map((id) => events.find((e) => e.id === id))
@@ -157,7 +212,12 @@ export default function TicketScreen({ navigation }) {
               onPress={() => navigation.navigate('EventDetail', { eventId: event.id })}
               activeOpacity={0.9}
             >
-              <TicketCard event={event} />
+              <TicketCard
+                event={event}
+                isActivated={!!ticketActivated[event.id]}
+                onActivate={() => activateTicket(event.id)}
+                onDeactivate={() => deactivateTicket(event.id)}
+              />
             </TouchableOpacity>
           ))}
           <TouchableOpacity
@@ -229,6 +289,42 @@ const ticketStyles = StyleSheet.create({
     borderRadius: 20,
   },
   verifiedText: { fontSize: 10, color: '#6EE7B7', fontWeight: '700', letterSpacing: 0.5 },
+  activatedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#450A0A',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#EF444444',
+  },
+  activatedText: { fontSize: 10, color: '#FCA5A5', fontWeight: '700', letterSpacing: 0.5 },
+  activateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 14,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignSelf: 'stretch',
+  },
+  activateButtonActive: {
+    backgroundColor: '#2D0A0A',
+    borderWidth: 1,
+    borderColor: '#EF444444',
+  },
+  activateButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+    letterSpacing: 0.5,
+  },
+  activateButtonTextActive: { color: '#FCA5A5' },
   eventName: {
     fontSize: 18,
     fontWeight: '800',

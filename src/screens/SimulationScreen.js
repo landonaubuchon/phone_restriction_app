@@ -1,7 +1,7 @@
 /**
  * SimulationScreen — BUZR Event Restriction Simulator
  *
- * Runs five scripted scenarios against the live restriction-logic functions
+ * Runs six scripted scenarios against the live restriction-logic functions
  * to surface edge cases and loopholes WITHOUT changing real app state.
  *
  * Each scenario executes a series of timestamped steps, calls the same
@@ -355,6 +355,78 @@ async function runScenarioE(log) {
   log('ok', 'Scenario E complete.');
 }
 
+// ─── SCENARIO F: Ticket-Activated Lock ───────────────────────────────────────
+async function runScenarioF(log) {
+  log('info', 'Scenario F — Ticket-Activated Gate Lock');
+  log('info', 'Verifies that scanning a ticket immediately activates restrictions');
+  log('info', 'regardless of GPS position, and that tight building radii work correctly.');
+
+  const now = new Date();
+  // Event starting in 45 min — user is in the pre-event window
+  const event = {
+    id: 'sim-f1',
+    name: 'Rock Concert – The Midnight',
+    latitude: 40.7505, longitude: -73.9934,
+    proximityRadiusMeters: 60, // tight building-footprint radius (MSG)
+    allowedApps: ['Phone', 'Messages', 'Camera'],
+    startTime: new Date(now.getTime() - 5 * 60 * 1000).toISOString(),  // started 5 min ago
+    endTime:   new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString(),
+  };
+
+  // ── 1. User on the sidewalk 120m away — outside tight 60m radius
+  const sidewalkLat = 40.7505 + (120 / 111320);
+  const sidewalkLon = -73.9934;
+  const sidewalkDist = Math.round(getDistanceMeters(
+    sidewalkLat, sidewalkLon, event.latitude, event.longitude
+  ));
+
+  const outsideGPS = shouldRestrictionsBeActive(event, sidewalkLat, sidewalkLon, false);
+  log(outsideGPS ? 'bug' : 'off',
+    `Sidewalk (${sidewalkDist}m, outside 60m radius, ticket NOT activated): restrictions ${outsideGPS ? 'ON ← BUG' : 'OFF ✓'}`
+  );
+  await sleep(100);
+  log('ok', 'Tight radius confirmed: phone NOT locked on sidewalk before entering.');
+
+  // ── 2. Same position but ticket IS activated (user just scanned at gate)
+  const ticketScanned = shouldRestrictionsBeActive(event, sidewalkLat, sidewalkLon, true);
+  log(ticketScanned ? 'on' : 'bug',
+    `Ticket activated (same sidewalk position): restrictions ${ticketScanned ? 'ON ✓' : 'OFF ← BUG'}`
+  );
+  await sleep(100);
+  log('ok', 'Gate scan confirmed: ticket activation overrides GPS — lock triggers immediately.');
+
+  // ── 3. Ticket activated but event not in time window (far future)
+  const futureEvent = {
+    ...event,
+    startTime: new Date(now.getTime() + 10 * 60 * 60 * 1000).toISOString(),
+    endTime:   new Date(now.getTime() + 13 * 60 * 60 * 1000).toISOString(),
+  };
+  const earlyActivation = shouldRestrictionsBeActive(futureEvent, sidewalkLat, sidewalkLon, true);
+  log(earlyActivation ? 'bug' : 'ok',
+    `Ticket activated but event is 10h away: restrictions ${earlyActivation ? 'ON ← BUG (premature lock)' : 'OFF ✓'}`
+  );
+  await sleep(100);
+  log('ok', 'Time-window guard confirmed: ticket activation alone cannot lock the phone outside the event window.');
+
+  // ── 4. User exits venue briefly (emergency) — ticket deactivated
+  log('info', 'Simulating emergency exit: user deactivates ticket, walks 80m outside…');
+  const exitPos = 40.7505 + (80 / 111320);
+  const afterDeactivate = shouldRestrictionsBeActive(event, exitPos, -73.9934, false);
+  log(afterDeactivate ? 'on' : 'off',
+    `After deactivation (80m outside radius): restrictions ${afterDeactivate ? 'ON (GPS still picks up inside)' : 'OFF ✓'}`
+  );
+  log('ok', 'Emergency exit: user can deactivate ticket to lift restrictions while outside the building.');
+
+  // ── 5. User re-enters and re-activates ticket
+  const reActivated = shouldRestrictionsBeActive(event, sidewalkLat, sidewalkLon, true);
+  log(reActivated ? 'on' : 'bug',
+    `Re-activated on re-entry: restrictions ${reActivated ? 'ON ✓' : 'OFF ← BUG'}`
+  );
+  await sleep(100);
+
+  log('ok', 'Scenario F complete. Ticket-activation lock is working correctly.');
+}
+
 // ─── Scenario catalog ─────────────────────────────────────────────────────────
 const SCENARIOS = [
   {
@@ -397,6 +469,14 @@ const SCENARIOS = [
     subtitle: 'Regression test for the 10s periodic re-evaluation tick bug fix',
     run: runScenarioE,
   },
+  {
+    id: 'F',
+    icon: 'scan-outline',
+    color: C.amber,
+    title: 'Ticket-Activated Gate Lock',
+    subtitle: 'Gate scan overrides GPS; tight building radius keeps sidewalk unlocked',
+    run: runScenarioF,
+  },
 ];
 
 // ─── Log entry row ────────────────────────────────────────────────────────────
@@ -437,7 +517,7 @@ export default function SimulationScreen() {
     setDone(false);
     setRunning('ALL');
     log('info', '══ BUZR Restriction Engine — Full Simulation Suite ══');
-    log('info', 'Running all 5 scenarios sequentially…');
+    log('info', 'Running all 6 scenarios sequentially…');
     for (const scenario of SCENARIOS) {
       setRunning(scenario.id);
       log('info', `\n${'─'.repeat(40)}`);

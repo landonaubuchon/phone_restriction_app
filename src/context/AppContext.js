@@ -63,27 +63,46 @@ export function AppProvider({ children }) {
     })();
   }, []);
 
-  // Evaluate active restrictions whenever relevant state changes
+  // Evaluate active restrictions whenever relevant state changes,
+  // AND on a 10-second tick so restrictions activate/deactivate when events
+  // start or end while the app is idle (without any user-triggered state change).
   useEffect(() => {
-    if (!consentGiven) {
-      setRestrictionActive(false);
-      setActiveEvent(null);
-      return;
-    }
-    let found = null;
-    for (const event of registeredEvents.map((id) => events.find((e) => e.id === id)).filter(Boolean)) {
-      const lat = userLocation?.latitude ?? null;
-      const lon = userLocation?.longitude ?? null;
-      if (shouldRestrictionsBeActive(event, lat, lon)) {
-        found = event;
-        break;
+    const evaluate = () => {
+      if (!consentGiven) {
+        setRestrictionActive(false);
+        setActiveEvent(null);
+        return;
       }
-    }
-    setActiveEvent(found);
-    setRestrictionActive(!!found);
-    if (found) {
-      setAllowedApps(getAllowedApps(found, emergencyApps));
-    }
+      // Collect ALL currently active events for registered IDs
+      const active = registeredEvents
+        .map((id) => events.find((e) => e.id === id))
+        .filter(Boolean)
+        .filter((event) => {
+          const lat = userLocation?.latitude ?? null;
+          const lon = userLocation?.longitude ?? null;
+          return shouldRestrictionsBeActive(event, lat, lon);
+        });
+
+      // Pick the most-recently-started event so the venue the user is
+      // currently AT takes precedence over an older registration.
+      // This also prevents registration order from changing the allowed-app list.
+      let found = null;
+      if (active.length > 0) {
+        found = active.reduce((latest, ev) =>
+          new Date(ev.startTime) > new Date(latest.startTime) ? ev : latest
+        );
+      }
+
+      setActiveEvent(found);
+      setRestrictionActive(!!found);
+      if (found) {
+        setAllowedApps(getAllowedApps(found, emergencyApps));
+      }
+    };
+
+    evaluate(); // run immediately on state change
+    const tick = setInterval(evaluate, 10_000); // re-evaluate every 10 s while idle
+    return () => clearInterval(tick);
   }, [consentGiven, registeredEvents, events, userLocation, emergencyApps]);
 
   const giveConsent = useCallback(async () => {

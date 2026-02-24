@@ -24,6 +24,7 @@ import EventDetailScreen from './src/screens/EventDetailScreen';
 import RestrictionScreen from './src/screens/RestrictionScreen';
 import EmergencyAppsScreen from './src/screens/EmergencyAppsScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
+import SimulationScreen from './src/screens/SimulationScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -172,6 +173,7 @@ function RootNavigator() {
       <Stack.Screen name="EmergencyApps" component={EmergencyAppsScreen} options={{ title: 'Emergency Apps' }} />
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="Flashlight" component={FlashlightScreen} options={{ title: 'Flashlight' }} />
+      <Stack.Screen name="Simulation" component={SimulationScreen} options={{ title: 'Simulation' }} />
     </Stack.Navigator>
   );
 }

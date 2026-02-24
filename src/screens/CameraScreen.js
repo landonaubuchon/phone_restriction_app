@@ -60,6 +60,12 @@ export default function CameraScreen() {
   const secondsRemaining = CAMERA_LIMIT_SECONDS - previouslyUsed - sessionSeconds;
   const cameraLocked = eventId !== null && secondsRemaining <= 0;
 
+  // Reset session counter when the active event changes (e.g. user switches events)
+  useEffect(() => {
+    sessionRef.current = 0;
+    setSessionSeconds(0);
+  }, [eventId]);
+
   useEffect(() => {
     if (!eventId || cameraLocked) {
       clearInterval(intervalRef.current);

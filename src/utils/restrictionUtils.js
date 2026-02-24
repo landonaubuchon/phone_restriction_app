@@ -88,10 +88,13 @@ export function getDistanceMeters(lat1, lon1, lat2, lon2) {
 
 /**
  * Returns true if the user's location is within the event's proximity radius.
+ * A 1-metre tolerance is added to absorb Haversine floating-point rounding and
+ * the minor approximation difference between the moveNorth helper and the
+ * Haversine formula — so a user at the exact boundary edge is correctly included.
  */
 export function isWithinProximity(userLat, userLon, event) {
   const distance = getDistanceMeters(userLat, userLon, event.latitude, event.longitude);
-  return distance <= event.proximityRadiusMeters;
+  return distance <= event.proximityRadiusMeters + 1;
 }
 
 /**

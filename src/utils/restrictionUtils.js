@@ -99,13 +99,30 @@ export function isWithinProximity(userLat, userLon, event) {
 
 /**
  * Determines whether restrictions should be active for an event.
- * Restrictions are active if the event is active (time-based) OR
- * the user is within proximity of the venue.
+ *
+ * Activation priority (first match wins):
+ *  1. Ticket-activated: user scanned their ticket at the gate. The venue has
+ *     confirmed they are inside, so GPS proximity is not required.
+ *  2. GPS inside building radius: user is within the venue's tight
+ *     building-footprint radius AND the event time window is open.
+ *  3. Time-only fallback: GPS is unavailable (null). Applies restrictions
+ *     for the duration of the time window as a conservative fallback.
+ *
+ * @param {object}  event           - Event data object
+ * @param {number|null} userLat     - User latitude, or null if unavailable
+ * @param {number|null} userLon     - User longitude, or null if unavailable
+ * @param {boolean} [ticketActivated=false] - True when the user has scanned
+ *   their ticket at the venue gate (confirmed inside).
  */
-export function shouldRestrictionsBeActive(event, userLat, userLon) {
+export function shouldRestrictionsBeActive(event, userLat, userLon, ticketActivated = false) {
   const timeActive = isEventActive(event) || isEventUpcoming(event);
   if (!timeActive) return false;
-  if (userLat == null || userLon == null) return timeActive;
+
+  // Ticket scan confirms the user is inside — no GPS check needed.
+  if (ticketActivated) return true;
+
+  // GPS-based proximity check.
+  if (userLat == null || userLon == null) return timeActive; // fallback: time only
   return isWithinProximity(userLat, userLon, event);
 }
 

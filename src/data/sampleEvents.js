@@ -24,7 +24,10 @@ export const SAMPLE_EVENTS = [
     longitude: -73.9934,
     startTime: addHours(now, 1).toISOString(),
     endTime: addHours(now, 4).toISOString(),
-    proximityRadiusMeters: 500,
+    // MSG is a circular arena ~120m in diameter. Radius set to 60m so the
+    // lock only activates once the user is inside the building shell, not
+    // while standing on the surrounding plaza or sidewalk.
+    proximityRadiusMeters: 60,
     allowedApps: ['Phone', 'Messages', 'Camera'],
     description: 'An electrifying night with The Midnight. Phone restrictions active inside the venue.',
     ticketCode: 'TM-20261001-001',
@@ -40,7 +43,10 @@ export const SAMPLE_EVENTS = [
     longitude: -118.2673,
     startTime: addHours(now, 3).toISOString(),
     endTime: addHours(now, 6).toISOString(),
-    proximityRadiusMeters: 400,
+    // Crypto.com Arena footprint is ~200m × 160m. A 80m radius keeps the
+    // lock boundary inside the outer wall so fans on the surrounding
+    // concourse or parking structure are not affected.
+    proximityRadiusMeters: 80,
     allowedApps: ['Phone', 'Messages', 'Camera'],
     description: 'The championship is on the line. Enjoy the game distraction-free.',
     ticketCode: 'SG-20261002-007',
@@ -56,7 +62,9 @@ export const SAMPLE_EVENTS = [
     longitude: -73.9872,
     startTime: addMinutes(now, 30).toISOString(),
     endTime: addHours(now, 3).toISOString(),
-    proximityRadiusMeters: 200,
+    // Richard Rodgers is a mid-block Broadway house, ~40m wide × 30m deep.
+    // A 20m radius keeps restrictions strictly inside the auditorium walls.
+    proximityRadiusMeters: 20,
     allowedApps: ['Phone', 'Messages'],
     description: 'Experience Hamilton live. Camera restrictions in effect per theater policy.',
     ticketCode: 'BW-20261003-012',
@@ -72,7 +80,10 @@ export const SAMPLE_EVENTS = [
     longitude: -73.9818,
     startTime: addHours(now, 5).toISOString(),
     endTime: addHours(now, 8).toISOString(),
-    proximityRadiusMeters: 150,
+    // AMC Lincoln Square occupies roughly 50m × 40m inside a larger mixed-use
+    // building. A 25m radius keeps the lock inside the cinema concourse so
+    // users in the adjacent retail floors or on the street are unaffected.
+    proximityRadiusMeters: 25,
     allowedApps: ['Phone', 'Messages'],
     description: 'Re-live the epic finale. All phones restricted to calls and messages during screening.',
     ticketCode: 'AM-20261004-023',

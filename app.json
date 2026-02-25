@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "VenueLock uses the camera to power the flashlight during events."
+        "NSCameraUsageDescription": "BUZR uses the camera to power the flashlight during events."
       }
     },
     "android": {

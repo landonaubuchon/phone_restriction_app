@@ -62,7 +62,7 @@ export default function EventDetailScreen({ route, navigation }) {
     if (!consentGiven) {
       Alert.alert(
         'Consent Required',
-        'Please give VenueLock consent first to enable phone restrictions at this event.',
+        'Please give BUZR consent first to enable phone restrictions at this event.',
         [{ text: 'OK' }]
       );
       return;

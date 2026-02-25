@@ -25,7 +25,7 @@ export default function FlashlightScreen() {
       if (!result.granted) {
         Alert.alert(
           'Camera Permission Required',
-          'VenueLock needs camera access to use the flashlight. Please enable it in your device settings.',
+          'BUZR needs camera access to use the flashlight. Please enable it in your device settings.',
           [{ text: 'OK' }]
         );
         return;

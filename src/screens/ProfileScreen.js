@@ -49,8 +49,8 @@ export default function ProfileScreen({ navigation }) {
       );
     } else {
       Alert.alert(
-        'Enable VenueLock',
-        'By enabling VenueLock, you consent to phone restrictions at registered events.',
+        'Enable BUZR',
+        'By enabling BUZR, you consent to phone restrictions at registered events.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Enable', onPress: giveConsent },
@@ -118,9 +118,9 @@ export default function ProfileScreen({ navigation }) {
           )}
         </View>
 
-        {/* VenueLock Consent */}
+        {/* BUZR Consent */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>VenueLock Status</Text>
+          <Text style={styles.sectionTitle}>BUZR Status</Text>
           <View style={styles.consentRow}>
             <View>
               <Text style={styles.consentLabel}>Restrictions Consent</Text>
@@ -140,7 +140,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={styles.consentNote}>
             {consentGiven
               ? 'Phone restrictions are active for registered events.'
-              : 'Enable to allow VenueLock to manage phone access at events.'}
+              : 'Enable to allow BUZR to manage phone access at events.'}
           </Text>
         </View>
 
@@ -187,10 +187,10 @@ export default function ProfileScreen({ navigation }) {
 
         {/* About */}
         <View style={[styles.section, styles.aboutSection]}>
-          <Text style={styles.sectionTitle}>About VenueLock</Text>
+          <Text style={styles.sectionTitle}>About BUZR</Text>
           <Text style={styles.aboutText}>Version 1.0.0</Text>
           <Text style={styles.aboutBody}>
-            VenueLock helps venues and ticketing services create better live experiences by
+            BUZR helps venues and ticketing services create better live experiences by
             temporarily restricting non-essential phone functions. Emergency features are always
             available.
           </Text>

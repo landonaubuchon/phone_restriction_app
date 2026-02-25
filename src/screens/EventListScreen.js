@@ -51,7 +51,7 @@ function EventCard({ event, isRegistered, onPress }) {
   );
 }
 
-export default function HomeScreen({ navigation }) {
+export default function EventListScreen({ navigation }) {
   const { events, registeredEvents, restrictionActive, activeEvent, consentGiven } = useAppContext();
 
   return (
@@ -76,7 +76,7 @@ export default function HomeScreen({ navigation }) {
       {!consentGiven && (
         <View style={styles.consentBanner}>
           <Text style={styles.consentText}>
-            ⚠️ VenueLock consent not given. Restrictions won't be enforced.
+            ⚠️ BUZR consent not given. Restrictions won't be enforced.
           </Text>
         </View>
       )}

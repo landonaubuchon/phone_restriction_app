@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   scroll: { padding: 24, paddingBottom: 48 },
   header: { alignItems: 'center', marginBottom: 32, marginTop: 16 },
   emoji: { fontSize: 64, marginBottom: 12 },
-  title: { fontSize: 36, fontWeight: '800', color: '#F1F5F9', letterSpacing: 1 },
+  title: { fontSize: 36, fontWeight: '800', color: '#EF4444', letterSpacing: 1 },
   subtitle: { fontSize: 16, color: '#94A3B8', marginTop: 4, fontStyle: 'italic' },
   section: {
     backgroundColor: '#0F0F1A',

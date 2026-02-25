@@ -121,51 +121,52 @@ async function runScenarioB(log) {
   const venueLat = 34.0430;
   const venueLon = -118.2673; // Crypto.com Arena, LA
 
+  // Phase offset semantics:
+  //   start     = now  -  startOffset minutes  (positive = started in past, negative = starts in future)
+  //   endActual = now  +  endOffset   minutes  (positive = ends in future,  negative = ended in past)
   const phases = [
     {
-      label: 'Pre-game (−90 min)',
-      startOffset: 90, endOffset: -3,
+      label: 'Pre-game (−90 min) — outside 30-min window',
+      startOffset: -90, endOffset: 270,   // starts in 90 min, ends in 4.5 h → restrictions OFF
       userLat: venueLat, userLon: venueLon,
     },
     {
-      label: 'Pre-game (−25 min) — 30-min proximity window opens',
-      startOffset: 25, endOffset: -3,
+      label: 'Pre-game (−25 min) — inside 30-min window',
+      startOffset: -25, endOffset: 265,   // starts in 25 min → isEventUpcoming → restrictions ON
       userLat: venueLat, userLon: venueLon,
     },
     {
-      label: 'Tip-off (event starts)',
-      startOffset: 0, endOffset: -180,
+      label: 'Tip-off (event just started)',
+      startOffset: 0, endOffset: 180,     // started now, ends in 3 h → restrictions ON
       userLat: venueLat, userLon: venueLon,
     },
     {
-      label: 'Halftime (−90 min into event)',
-      startOffset: -90, endOffset: -90,
+      label: 'Halftime (90 min into game)',
+      startOffset: 90, endOffset: 90,     // started 90 min ago, ends in 90 min → restrictions ON
       userLat: venueLat, userLon: venueLon,
     },
     {
-      label: 'Final buzzer (event just ended)',
-      startOffset: -181, endOffset: 1,
+      label: 'Final buzzer (game just ended)',
+      startOffset: 180, endOffset: 0,     // started 3 h ago, ended right now → 30-min buffer → ON
       userLat: venueLat, userLon: venueLon,
     },
     {
       label: '30-min overtime buffer (15 min in)',
-      startOffset: -196, endOffset: 16,
+      startOffset: 195, endOffset: -15,   // ended 15 min ago → still inside 30-min buffer → ON
       userLat: venueLat, userLon: venueLon,
     },
     {
       label: 'Buffer expired (+31 min past end)',
-      startOffset: -212, endOffset: 31,
+      startOffset: 211, endOffset: -31,   // ended 31 min ago → buffer expired → restrictions OFF
       userLat: venueLat, userLon: venueLon,
     },
   ];
 
   for (const phase of phases) {
-    const start = new Date(now.getTime() - phase.startOffset * 60 * 1000);
-    const end   = new Date(now.getTime() + Math.abs(phase.endOffset) * 60 * 1000);
-    // Negative endOffset means end is in the past
-    const endActual = phase.endOffset < 0
-      ? new Date(now.getTime() + phase.endOffset * 60 * 1000)
-      : end;
+    // start = now minus startOffset minutes (positive = past, negative = future)
+    // end   = now plus  endOffset   minutes (positive = future, negative = past)
+    const start     = new Date(now.getTime() - phase.startOffset * 60 * 1000);
+    const endActual = new Date(now.getTime() + phase.endOffset   * 60 * 1000);
 
     const event = {
       id: 'sim-b',

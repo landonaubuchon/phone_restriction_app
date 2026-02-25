@@ -52,8 +52,8 @@ export default function RestrictionScreen({ navigation }) {
           <Text style={styles.centeredIcon}>⚠️</Text>
           <Text style={styles.centeredTitle}>Consent Required</Text>
           <Text style={styles.centeredBody}>
-            You haven't given consent for VenueLock to manage your phone restrictions.
-            Please enable VenueLock in your Profile settings.
+            You haven't given consent for BUZR to manage your phone restrictions.
+            Please enable BUZR in your Profile settings.
           </Text>
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Profile')}>
             <Text style={styles.actionButtonText}>Go to Profile</Text>

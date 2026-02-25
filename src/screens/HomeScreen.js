@@ -76,7 +76,7 @@ export default function HomeScreen({ navigation }) {
       {!consentGiven && (
         <View style={styles.consentBanner}>
           <Text style={styles.consentText}>
-            ⚠️ VenueLock consent not given. Restrictions won't be enforced.
+            ⚠️ BUZR consent not given. Restrictions won't be enforced.
           </Text>
         </View>
       )}

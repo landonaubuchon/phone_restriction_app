@@ -30,15 +30,15 @@ export default function WelcomeScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <Text style={styles.emoji}>📵</Text>
-          <Text style={styles.title}>VenueLock</Text>
-          <Text style={styles.subtitle}>Be present. Experience more.</Text>
+          <Text style={styles.emoji}>🔒</Text>
+          <Text style={styles.title}>BUZR</Text>
+          <Text style={styles.subtitle}>The event phone-restriction platform.</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What is VenueLock?</Text>
+          <Text style={styles.sectionTitle}>What is BUZR?</Text>
           <Text style={styles.body}>
-            VenueLock partners with ticketing services and venues to automatically restrict
+            BUZR partners with ticketing services and venues to automatically restrict
             non-essential phone functions during live events — concerts, sporting events, movies,
             and more — so you and everyone around you can be fully present.
           </Text>
@@ -78,7 +78,7 @@ export default function WelcomeScreen({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your Consent</Text>
           <Text style={styles.body}>
-            By tapping <Text style={styles.bold}>I Agree</Text>, you consent to VenueLock
+            By tapping <Text style={styles.bold}>Accept &amp; Continue</Text>, you consent to BUZR
             restricting non-essential phone functions while you are at a registered event.
             You may revoke consent at any time in your profile settings.
           </Text>
@@ -89,7 +89,7 @@ export default function WelcomeScreen({ navigation }) {
         </View>
 
         <TouchableOpacity style={styles.agreeButton} onPress={handleConsent}>
-          <Text style={styles.agreeButtonText}>I Agree – Enable VenueLock</Text>
+          <Text style={styles.agreeButtonText}>Accept &amp; Continue</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.declineButton} onPress={handleDecline}>
@@ -101,23 +101,27 @@ export default function WelcomeScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
+  container: { flex: 1, backgroundColor: '#0A0A0F' },
   scroll: { padding: 24, paddingBottom: 48 },
   header: { alignItems: 'center', marginBottom: 32, marginTop: 16 },
   emoji: { fontSize: 64, marginBottom: 12 },
   title: { fontSize: 36, fontWeight: '800', color: '#F1F5F9', letterSpacing: 1 },
   subtitle: { fontSize: 16, color: '#94A3B8', marginTop: 4, fontStyle: 'italic' },
   section: {
-    backgroundColor: '#1E293B',
+    backgroundColor: '#0F0F1A',
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1E1E2E',
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F1F5F9',
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#EF4444',
     marginBottom: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   body: { fontSize: 15, color: '#CBD5E1', lineHeight: 22 },
   featureRow: { flexDirection: 'row', marginBottom: 12, alignItems: 'flex-start' },
@@ -132,7 +136,7 @@ const styles = StyleSheet.create({
   },
   bold: { fontWeight: '700', color: '#F1F5F9' },
   agreeButton: {
-    backgroundColor: '#6D28D9',
+    backgroundColor: '#EF4444',
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',

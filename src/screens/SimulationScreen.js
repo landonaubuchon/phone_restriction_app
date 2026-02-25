@@ -55,7 +55,9 @@ function makeEvent(overrides) {
     venue: 'Madison Square Garden',
     latitude: 40.7505,
     longitude: -73.9934,
-    proximityRadiusMeters: 500,
+    // Matches the real sampleEvents radius: MSG is a circular arena ~120m
+    // diameter — radius set to 60m (building footprint, not surrounding plaza).
+    proximityRadiusMeters: 60,
     allowedApps: ['Phone', 'Messages', 'Camera'],
     startTime: new Date(now.getTime() - 30 * 60 * 1000).toISOString(), // started 30m ago
     endTime: new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString(),  // ends in 2h
@@ -75,25 +77,30 @@ function moveNorth(lat, lon, meters) {
 
 // ─── SCENARIO A: Concert Approach ─────────────────────────────────────────────
 async function runScenarioA(log) {
-  log('info', 'Scenario A — Concert Approach');
+  log('info', 'Scenario A — Concert Approach (60m building-footprint radius)');
   log('info', 'User walks toward Madison Square Garden from 2 km away.');
 
   const event = makeEvent();
   const venueLat = event.latitude;
   const venueLon = event.longitude;
 
-  const distances = [2000, 1000, 600, 501, 500, 499, 200, 0];
+  // Test distances spanning well outside the building, boundary edge, and inside.
+  // Note: isWithinProximity adds PROXIMITY_TOLERANCE_METERS (1m) to absorb Haversine
+  // floating-point rounding, so the effective activation edge is ~61m not 60m.
+  const distances = [2000, 500, 200, 120, 65, 60, 40, 0];
 
   for (const dist of distances) {
     // Place user `dist` meters north of venue
     const userPos = moveNorth(venueLat, venueLon, dist);
     const actual = getDistanceMeters(userPos.latitude, userPos.longitude, venueLat, venueLon);
     const active = shouldRestrictionsBeActive(event, userPos.latitude, userPos.longitude);
+    // Effective radius = declared 60m + 1m tolerance constant
+    const effectiveRadius = event.proximityRadiusMeters + 1;
 
-    if (dist <= 500 && !active) {
-      log('bug', `BUG: User is ${Math.round(actual)}m away (≤500m radius) but restrictions are OFF`);
-    } else if (dist > 500 && active) {
-      log('bug', `BUG: User is ${Math.round(actual)}m away (>500m radius) but restrictions are ON`);
+    if (Math.round(actual) <= effectiveRadius && !active) {
+      log('bug', `BUG: User is ${Math.round(actual)}m away (≤${effectiveRadius}m effective radius) but restrictions are OFF`);
+    } else if (Math.round(actual) > effectiveRadius && active) {
+      log('bug', `BUG: User is ${Math.round(actual)}m away (>${effectiveRadius}m effective radius) but restrictions are ON`);
     } else {
       const status = active ? 'RESTRICTIONS ON ✓' : 'restrictions off';
       log(active ? 'on' : 'off', `${Math.round(actual)}m from venue → ${status}`);
@@ -101,7 +108,7 @@ async function runScenarioA(log) {
     await sleep(120);
   }
 
-  log('found', 'LOOPHOLE: GPS accuracy is ±5–50m. A user at 505m may read as 495m due to GPS drift, triggering restrictions outside the intended boundary. Recommend a 25m inward hysteresis buffer.');
+  log('found', 'LOOPHOLE: GPS accuracy is ±5–50m. A user at 65m may read as 55m due to GPS drift, triggering restrictions outside the 60m building boundary. Recommend a 10–15m inward hysteresis buffer.');
   log('ok', 'Scenario A complete.');
 }
 
@@ -164,7 +171,7 @@ async function runScenarioB(log) {
       id: 'sim-b',
       name: 'NBA Finals – Game 5',
       latitude: venueLat, longitude: venueLon,
-      proximityRadiusMeters: 400,
+      proximityRadiusMeters: 80, // Crypto.com Arena building footprint (~200m×160m, 80m radius)
       allowedApps: ['Phone', 'Messages', 'Camera'],
       startTime: start.toISOString(),
       endTime: endActual.toISOString(),
@@ -323,7 +330,7 @@ async function runScenarioE(log) {
     id: 'sim-e1',
     name: 'Avengers Re-Release',
     latitude: 40.7845, longitude: -73.9818,
-    proximityRadiusMeters: 150,
+    proximityRadiusMeters: 25, // AMC Lincoln Square building footprint (~50m×40m, 25m radius)
     allowedApps: ['Phone', 'Messages'],
     startTime: new Date(now.getTime() - 5 * 1000).toISOString(), // started 5 seconds ago
     endTime: new Date(now.getTime() + 3 * 60 * 60 * 1000).toISOString(),

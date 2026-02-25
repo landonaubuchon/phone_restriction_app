@@ -11,8 +11,6 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 
-const CAMERA_LIMIT_SECONDS = 15 * 60; // 15 minutes per event
-
 function formatMinSec(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
@@ -48,7 +46,7 @@ function TimeProgressBar({ secondsRemaining, totalSeconds }) {
 }
 
 export default function CameraScreen() {
-  const { activeEvent, cameraUsage, updateCameraUsage } = useAppContext();
+  const { activeEvent, cameraUsage, updateCameraUsage, CAMERA_LIMIT_SECONDS } = useAppContext();
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState('back');
   const [sessionSeconds, setSessionSeconds] = useState(0);

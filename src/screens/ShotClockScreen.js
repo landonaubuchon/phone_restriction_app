@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 13,
     fontWeight: '900',
-    color: '#1E1E2E',
+    color: '#EF4444',
     letterSpacing: 6,
     textTransform: 'uppercase',
   },

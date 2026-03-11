@@ -15,6 +15,7 @@ import {
 
 import { AppProvider, useAppContext } from './src/context/AppContext';
 import SimulatedAppScreen from './src/screens/SimulatedAppScreen';
+import AdminScreen from './src/screens/AdminScreen';
 
 // Screens — base function tabs
 import ShotClockScreen from './src/screens/ShotClockScreen';
@@ -181,6 +182,15 @@ function RootNavigator() {
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="Flashlight" component={FlashlightScreen} options={{ title: 'Flashlight' }} />
       <Stack.Screen name="Simulation" component={SimulationScreen} options={{ title: 'Simulation' }} />
+      <Stack.Screen
+        name="Admin"
+        component={AdminScreen}
+        options={{
+          title: '⚙️ Admin Panel',
+          headerStyle: { backgroundColor: '#0A0A0F' },
+          headerTintColor: '#EF4444',
+        }}
+      />
       <Stack.Screen
         name="SimulatedApp"
         component={SimulatedAppScreen}

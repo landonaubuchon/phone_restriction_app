@@ -291,6 +291,14 @@ export default function ShotClockScreen({ navigation }) {
         >
           <Ionicons name="flask-outline" size={22} color="#3F3F5A" />
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.headerIconBtn}
+          onPress={() => navigation.navigate('Admin')}
+          accessibilityLabel="Admin panel"
+        >
+          <Ionicons name="construct-outline" size={22} color="#3F3F5A" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>

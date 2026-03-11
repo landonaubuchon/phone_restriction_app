@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SAMPLE_EVENTS } from '../data/sampleEvents';
 import { shouldRestrictionsBeActive, getAllowedApps } from '../utils/restrictionUtils';
@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   REGISTERED_EVENTS: 'registered_events',
   CAMERA_USAGE: 'camera_usage',
   TICKET_ACTIVATED: 'ticket_activated', // { [eventId]: true }
+  CUSTOM_EVENTS: 'custom_events',        // admin-created simulated events
 };
 
 export const CAMERA_LIMIT_SECONDS = 15 * 60; // 15 minutes per event
@@ -29,7 +30,12 @@ export function AppProvider({ children }) {
   const [activeEvent, setActiveEvent] = useState(null);
   const [restrictionActive, setRestrictionActive] = useState(false);
   const [allowedApps, setAllowedApps] = useState([]);
-  const [events] = useState(SAMPLE_EVENTS);
+  // Admin: custom simulated events created at runtime (persisted)
+  const [customEvents, setCustomEvents] = useState([]);
+  // Admin: GPS override — simulates the user being at a specific coordinate
+  const [simulatedLocation, setSimulatedLocation] = useState(null);
+  // Admin: restriction override — null=auto, true=force ON, false=force OFF
+  const [restrictionOverride, setRestrictionOverride] = useState(null);
   // cameraUsage: { [eventId]: secondsUsed }
   const [cameraUsage, setCameraUsage] = useState({});
   // ticketActivated: { [eventId]: true } — set when user scans ticket at gate.
@@ -46,17 +52,21 @@ export function AppProvider({ children }) {
     camera: false,
   });
 
+  // Merged event list: built-in sample events + admin-created custom events
+  const events = useMemo(() => [...SAMPLE_EVENTS, ...customEvents], [customEvents]);
+
   // Load persisted data on mount
   useEffect(() => {
     (async () => {
       try {
-        const [consent, eApps, profile, regEvents, camUsage, ticketAct] = await Promise.all([
+        const [consent, eApps, profile, regEvents, camUsage, ticketAct, custEvts] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEYS.CONSENT_GIVEN),
           AsyncStorage.getItem(STORAGE_KEYS.EMERGENCY_APPS),
           AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
           AsyncStorage.getItem(STORAGE_KEYS.REGISTERED_EVENTS),
           AsyncStorage.getItem(STORAGE_KEYS.CAMERA_USAGE),
           AsyncStorage.getItem(STORAGE_KEYS.TICKET_ACTIVATED),
+          AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_EVENTS),
         ]);
         if (consent === 'true') setConsentGiven(true);
         if (eApps) setEmergencyApps(JSON.parse(eApps));
@@ -64,6 +74,7 @@ export function AppProvider({ children }) {
         if (regEvents) setRegisteredEvents(JSON.parse(regEvents));
         if (camUsage) setCameraUsage(JSON.parse(camUsage));
         if (ticketAct) setTicketActivated(JSON.parse(ticketAct));
+        if (custEvts) setCustomEvents(JSON.parse(custEvts));
       } catch (e) {
         // Ignore storage errors
       } finally {
@@ -82,13 +93,16 @@ export function AppProvider({ children }) {
         setActiveEvent(null);
         return;
       }
+      // Admin GPS override takes precedence over real device location
+      const effectiveLoc = simulatedLocation ?? userLocation;
+      const lat = effectiveLoc?.latitude ?? null;
+      const lon = effectiveLoc?.longitude ?? null;
+
       // Collect ALL currently active events for registered IDs
       const active = registeredEvents
         .map((id) => events.find((e) => e.id === id))
         .filter(Boolean)
         .filter((event) => {
-          const lat = userLocation?.latitude ?? null;
-          const lon = userLocation?.longitude ?? null;
           const isTicketActivated = !!ticketActivated[event.id];
           return shouldRestrictionsBeActive(event, lat, lon, isTicketActivated);
         });
@@ -104,7 +118,9 @@ export function AppProvider({ children }) {
       }
 
       setActiveEvent(found);
-      setRestrictionActive(!!found);
+      // Admin restriction override (force ON/OFF) takes precedence over auto-evaluation.
+      // null = normal auto mode.
+      setRestrictionActive(restrictionOverride !== null ? restrictionOverride : !!found);
       if (found) {
         setAllowedApps(getAllowedApps(found, emergencyApps));
       }
@@ -113,7 +129,7 @@ export function AppProvider({ children }) {
     evaluate(); // run immediately on state change
     const tick = setInterval(evaluate, RESTRICTION_CHECK_INTERVAL_MS); // re-evaluate while idle
     return () => clearInterval(tick);
-  }, [consentGiven, registeredEvents, events, userLocation, emergencyApps, ticketActivated]);
+  }, [consentGiven, registeredEvents, events, userLocation, emergencyApps, ticketActivated, simulatedLocation, restrictionOverride]);
 
   const giveConsent = useCallback(async () => {
     setConsentGiven(true);
@@ -202,6 +218,30 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  /** [Admin] Add a custom simulated event and persist it. */
+  const addCustomEvent = useCallback((event) => {
+    setCustomEvents((prev) => {
+      const updated = [...prev, event];
+      AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_EVENTS, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
+  /** [Admin] Remove a custom simulated event by ID. */
+  const removeCustomEvent = useCallback((eventId) => {
+    setCustomEvents((prev) => {
+      const updated = prev.filter((e) => e.id !== eventId);
+      AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_EVENTS, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+    // Also unregister and deactivate ticket for the removed event
+    setRegisteredEvents((prev) => {
+      const updated = prev.filter((id) => id !== eventId);
+      AsyncStorage.setItem(STORAGE_KEYS.REGISTERED_EVENTS, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -219,6 +259,9 @@ export function AppProvider({ children }) {
         registerForEvent,
         unregisterFromEvent,
         events,
+        customEvents,
+        addCustomEvent,
+        removeCustomEvent,
         activeEvent,
         restrictionActive,
         allowedApps,
@@ -231,6 +274,11 @@ export function AppProvider({ children }) {
         notifications,
         addNotification,
         clearNotification,
+        // Admin controls
+        simulatedLocation,
+        setSimulatedLocation,
+        restrictionOverride,
+        setRestrictionOverride,
       }}
     >
       {children}

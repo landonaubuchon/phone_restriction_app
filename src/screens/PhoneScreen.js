@@ -118,7 +118,7 @@ export default function PhoneScreen() {
             <Ionicons name="backspace-outline" size={24} color="#94A3B8" />
           </TouchableOpacity>
         )}
-      </View>
+      </Animated.View>
 
       {/* Dial Pad — slide up */}
       <Animated.View

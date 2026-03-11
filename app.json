@@ -15,7 +15,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "BUZR uses the camera to power the flashlight during events."
+        "NSCameraUsageDescription": "BUZR uses the camera to power the flashlight during events.",
+        "NSLocationWhenInUseUsageDescription": "BUZR uses your location to detect when you are inside a registered venue and activate phone restrictions.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "BUZR uses your location to detect when you are inside a registered venue and activate phone restrictions."
       }
     },
     "android": {
@@ -24,11 +26,18 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["android.permission.CAMERA"]
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

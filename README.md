@@ -29,7 +29,17 @@ cd phone_restriction_app
 
 ---
 
-## Step 2 — Install Dependencies
+## Step 2 — Switch to the BUZR branch
+
+The app code lives on the feature branch. After cloning, check it out:
+
+```bash
+git checkout copilot/create-event-phone-restrictions-app
+```
+
+---
+
+## Step 3 — Install Dependencies
 
 ```bash
 npm install
@@ -39,7 +49,7 @@ This downloads all the libraries the app needs (takes about 1–2 minutes the fi
 
 ---
 
-## Step 3 — Start the Development Server
+## Step 4 — Start the Development Server
 
 ```bash
 npx expo start
@@ -54,7 +64,7 @@ After a few seconds you will see a **QR code** printed in your terminal, like th
 
 ---
 
-## Step 4 — Open the App on Your Phone
+## Step 5 — Open the App on Your Phone
 
 ### iPhone
 1. Open the built-in **Camera** app.
@@ -70,7 +80,7 @@ The app will load on your phone in about 10–20 seconds.
 
 ---
 
-## Step 5 — Navigating the App
+## Step 6 — Navigating the App
 
 When the app first opens you will land on the **Welcome / Consent screen**.
 
@@ -136,8 +146,12 @@ Both are optional — the app falls back to time-only mode if location is denied
 
 | Problem | Fix |
 |---|---|
+| **"Can't see any changes"** | You are likely on the `main` branch which has no code. Run `git checkout copilot/create-event-phone-restrictions-app` then `npm install` and `npx expo start` |
+| **"Can't access the iOS portion"** | Make sure you have **Expo Go installed from the App Store**. Then open the Camera app, scan the QR code shown in the terminal, and tap the "Open in Expo Go" banner. Both your phone and computer **must be on the same Wi-Fi network**. |
 | QR code does not scan | Make sure your phone and computer are on the **same Wi-Fi network** |
 | "Network response timed out" in Expo Go | Restart the server with `npx expo start --tunnel` |
 | Module not found error | Run `npm install` again, then `npx expo start --clear` |
-| Camera permission denied | Go to Settings → BUZR → allow Camera |
-| Location permission denied | Go to Settings → BUZR → allow Location (restrictions fall back to time-only mode) |
+| App shows a white/blank screen | Run `npx expo start --clear` to clear the Metro cache |
+| Camera permission denied | Go to Settings → Expo Go → allow Camera |
+| Location permission denied | Go to Settings → Expo Go → allow Location (restrictions fall back to time-only mode) |
+| Fonts not loading | Run `npx expo start --clear` — Oswald fonts are bundled and will load from Google Fonts on first run |

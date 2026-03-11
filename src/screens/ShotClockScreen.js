@@ -6,12 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 import { isEventUpcoming, secondsUntilStart, secondsUntilEnd } from '../utils/restrictionUtils';
 import { EVENT_TYPE_COLORS, EVENT_TYPE_ICONS } from '../data/sampleEvents';
 import { F } from '../theme/fonts';
+import BUZRLogo from '../components/BUZRLogo';
+import AnimatedPressCard from '../components/AnimatedPressCard';
+import useEntranceAnimation from '../hooks/useEntranceAnimation';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -216,6 +220,22 @@ export default function ShotClockScreen({ navigation }) {
   const [secsToEnd, setSecsToEnd]     = useState(0);
   const [secsToStart, setSecsToStart] = useState(0);
 
+  // Staggered entrance animations
+  const headerAnim  = useEntranceAnimation({ delay: 0,   fromY: -20, duration: 380 });
+  const atmoAnim    = useEntranceAnimation({ delay: 80,  fromY: 20,  duration: 400 });
+  const clockAnim   = useEntranceAnimation({ delay: 160, fromY: 24,  duration: 440 });
+  const gridAnim    = useEntranceAnimation({ delay: 280, fromY: 20,  duration: 380 });
+  const bottomAnim  = useEntranceAnimation({ delay: 360, fromY: 16,  duration: 360 });
+
+  useEffect(() => {
+    headerAnim.start();
+    atmoAnim.start();
+    clockAnim.start();
+    gridAnim.start();
+    bottomAnim.start();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const nextEvent = !activeEvent
     ? registeredEvents
         .map((id) => events.find((e) => e.id === id))
@@ -241,7 +261,7 @@ export default function ShotClockScreen({ navigation }) {
   const EMERGENCY_ICONS = {
     'Glucose Monitor': '🩸',
     Insulin: '💉',
-    'Heart Monitor': '❤️‍🩹',
+    'Heart Monitor': '❤️',
     Maps: '🗺️',
     Wallet: '💳',
   };
@@ -253,7 +273,7 @@ export default function ShotClockScreen({ navigation }) {
     { type: 'camera',   icon: 'camera',       color: '#A855F7', count: notifications.camera ? 1 : 0,    label: 'Notice',  tab: 'Camera'   },
   ].filter((n) => n.count > 0);
 
-  // Quick-action cards with richer descriptions
+  // Quick-action cards
   const quickActions = [
     { icon: 'flashlight-outline', color: '#F1F5F9', label: 'Torch',   sub: 'On/Off toggle',      screen: 'Flashlight'    },
     { icon: 'medkit-outline',     color: '#F87171', label: 'Medical', sub: 'Emergency apps',     screen: 'EmergencyApps', badge: (emergencyApps || []).length || null },
@@ -263,8 +283,13 @@ export default function ShotClockScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* ── Header ── */}
-      <View style={styles.header}>
+      {/* ── Header — animated slide down ── */}
+      <Animated.View
+        style={[
+          styles.header,
+          { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] },
+        ]}
+      >
         <TouchableOpacity
           style={styles.headerIconBtn}
           onPress={() => navigation.navigate('EventList')}
@@ -274,7 +299,8 @@ export default function ShotClockScreen({ navigation }) {
           {!consentGiven && <View style={styles.warningDot} />}
         </TouchableOpacity>
 
-        <Text style={[styles.headerTitle, { fontFamily: F.black }]}>BUZR</Text>
+        {/* Centered BUZR logo in header */}
+        <BUZRLogo size={22} pulse={false} style={styles.headerLogo} />
 
         <TouchableOpacity
           style={styles.headerIconBtn}
@@ -299,33 +325,46 @@ export default function ShotClockScreen({ navigation }) {
         >
           <Ionicons name="construct-outline" size={22} color="#3F3F5A" />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
-        {/* ── Atmosphere strip ── */}
-        <AtmosphereStrip event={displayEvent} />
+        {/* ── Atmosphere strip — animated ── */}
+        <Animated.View
+          style={{ opacity: atmoAnim.opacity, transform: [{ translateY: atmoAnim.translateY }] }}
+        >
+          <AtmosphereStrip event={displayEvent} />
+        </Animated.View>
 
-        {/* ── Shot Clock ── */}
-        <ShotClock
-          isActive={isActive}
-          eventName={displayEvent?.name}
-          eventType={displayEvent?.type}
-          secsToEnd={secsToEnd}
-          secsToStart={secsToStart}
-        />
+        {/* ── Shot Clock — animated ── */}
+        <Animated.View
+          style={{ opacity: clockAnim.opacity, transform: [{ translateY: clockAnim.translateY }] }}
+        >
+          <ShotClock
+            isActive={isActive}
+            eventName={displayEvent?.name}
+            eventType={displayEvent?.type}
+            secsToEnd={secsToEnd}
+            secsToStart={secsToStart}
+          />
+        </Animated.View>
 
         {/* ── Notification row ── */}
         {notifItems.length > 0 && (
-          <View style={styles.notifSection}>
+          <Animated.View
+            style={[
+              styles.notifSection,
+              { opacity: gridAnim.opacity, transform: [{ translateY: gridAnim.translateY }] },
+            ]}
+          >
             <Text style={[styles.notifSectionTitle, { fontFamily: F.semiBold }]}>NOTIFICATIONS</Text>
             <View style={styles.notifRow}>
               {notifItems.map((item) => (
-                <TouchableOpacity
+                <AnimatedPressCard
                   key={item.type}
                   style={[styles.notifCard, { borderColor: item.color + '55' }]}
                   onPress={() => { clearNotification(item.type); navigation.navigate(item.tab); }}
-                  activeOpacity={0.75}
+                  scaleTo={0.95}
                 >
                   <View style={[styles.notifIconCircle, { backgroundColor: item.color + '22' }]}>
                     <Ionicons name={item.icon} size={18} color={item.color} />
@@ -336,35 +375,44 @@ export default function ShotClockScreen({ navigation }) {
                   <Text style={[styles.notifCardLabel, { color: item.color, fontFamily: F.semiBold }]}>
                     {item.label}
                   </Text>
-                </TouchableOpacity>
+                </AnimatedPressCard>
               ))}
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {/* ── Active restriction pill ── */}
         {isActive && (
-          <TouchableOpacity
-            style={styles.restrictionPill}
-            onPress={() => navigation.navigate('Restriction')}
-            activeOpacity={0.8}
+          <Animated.View
+            style={{ opacity: gridAnim.opacity, transform: [{ translateY: gridAnim.translateY }] }}
           >
-            <Ionicons name="lock-closed" size={14} color="#EF4444" />
-            <Text style={[styles.restrictionPillText, { fontFamily: F.semiBold }]}>
-              Restrictions Active
-            </Text>
-            <Ionicons name="chevron-forward" size={14} color="#3F3F5A" />
-          </TouchableOpacity>
+            <AnimatedPressCard
+              onPress={() => navigation.navigate('Restriction')}
+              style={styles.restrictionPill}
+              scaleTo={0.97}
+            >
+              <Ionicons name="lock-closed" size={14} color="#EF4444" />
+              <Text style={[styles.restrictionPillText, { fontFamily: F.semiBold }]}>
+                Restrictions Active — Tap to View
+              </Text>
+              <Ionicons name="chevron-forward" size={14} color="#3F3F5A" />
+            </AnimatedPressCard>
+          </Animated.View>
         )}
 
-        {/* ── Quick-action grid ── */}
-        <View style={styles.quickGrid}>
+        {/* ── Quick-action grid — animated ── */}
+        <Animated.View
+          style={[
+            styles.quickGrid,
+            { opacity: gridAnim.opacity, transform: [{ translateY: gridAnim.translateY }] },
+          ]}
+        >
           {quickActions.map(({ icon, color, label, sub, screen, badge }) => (
-            <TouchableOpacity
+            <AnimatedPressCard
               key={label}
               style={styles.quickCard}
               onPress={() => navigation.navigate(screen)}
-              accessibilityLabel={label}
+              scaleTo={0.95}
             >
               <Ionicons name={icon} size={30} color={color} />
               <Text style={[styles.quickCardLabel, { fontFamily: F.black }]}>{label}</Text>
@@ -374,55 +422,95 @@ export default function ShotClockScreen({ navigation }) {
                   <Text style={styles.quickCardBadgeText}>{badge}</Text>
                 </View>
               ) : null}
-            </TouchableOpacity>
+            </AnimatedPressCard>
           ))}
-        </View>
+        </Animated.View>
 
-        {/* ── Emergency apps row (if any enabled) ── */}
-        {(emergencyApps || []).length > 0 && (
-          <View style={styles.emergencySection}>
-            <View style={styles.emergencySectionHeader}>
-              <Ionicons name="medkit" size={14} color="#F87171" />
-              <Text style={[styles.emergencySectionTitle, { fontFamily: F.semiBold }]}>
-                EMERGENCY APPS ACTIVE
+        {/* ── Emergency apps row ── */}
+        <Animated.View
+          style={{ opacity: bottomAnim.opacity, transform: [{ translateY: bottomAnim.translateY }] }}
+        >
+          {(emergencyApps || []).length > 0 && (
+            <View style={styles.emergencySection}>
+              <View style={styles.emergencySectionHeader}>
+                <Ionicons name="medkit" size={14} color="#F87171" />
+                <Text style={[styles.emergencySectionTitle, { fontFamily: F.semiBold }]}>
+                  EMERGENCY APPS ACTIVE
+                </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('EmergencyApps')}>
+                  <Text style={[styles.manageLink, { fontFamily: F.regular }]}>Manage ›</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.emergencyChipRow}>
+                {emergencyApps.slice(0, 4).map((app) => (
+                  <View key={app} style={styles.emergencyChip}>
+                    <Text style={styles.emergencyChipIcon}>{EMERGENCY_ICONS[app] ?? '📱'}</Text>
+                    <Text style={[styles.emergencyChipLabel, { fontFamily: F.regular }]}>{app}</Text>
+                  </View>
+                ))}
+                {emergencyApps.length > 4 && (
+                  <Text style={styles.emergencyMore}>+{emergencyApps.length - 4}</Text>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* ── Upcoming events strip (fills bottom blank space) ── */}
+          {registeredEvents.length > 0 ? (
+            <View style={styles.upcomingStrip}>
+              <View style={styles.upcomingStripHeader}>
+                <Ionicons name="calendar" size={14} color="#818CF8" />
+                <Text style={[styles.upcomingStripTitle, { fontFamily: F.semiBold }]}>
+                  MY EVENTS
+                </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('EventList')}>
+                  <Text style={[styles.manageLink, { fontFamily: F.regular }]}>View All ›</Text>
+                </TouchableOpacity>
+              </View>
+              {registeredEvents.slice(0, 3).map((id) => {
+                const ev = events.find((e) => e.id === id);
+                if (!ev) return null;
+                const typeColor = EVENT_TYPE_COLORS[ev.type] ?? '#6D28D9';
+                return (
+                  <AnimatedPressCard
+                    key={id}
+                    style={styles.upcomingRow}
+                    onPress={() => navigation.navigate('EventDetail', { eventId: ev.id })}
+                    scaleTo={0.98}
+                  >
+                    <View style={[styles.upcomingDot, { backgroundColor: typeColor }]} />
+                    <View style={styles.upcomingInfo}>
+                      <Text style={[styles.upcomingName, { fontFamily: F.semiBold }]} numberOfLines={1}>
+                        {ev.name}
+                      </Text>
+                      <Text style={styles.upcomingVenue} numberOfLines={1}>📍 {ev.venue}</Text>
+                    </View>
+                    <Text style={[styles.upcomingType, { color: typeColor }]}>
+                      {EVENT_TYPE_ICONS[ev.type]}
+                    </Text>
+                  </AnimatedPressCard>
+                );
+              })}
+            </View>
+          ) : (
+            <AnimatedPressCard
+              onPress={() => navigation.navigate('EventList')}
+              style={styles.registerCTA}
+              scaleTo={0.97}
+            >
+              <Ionicons name="add-circle-outline" size={18} color="#818CF8" />
+              <Text style={[styles.registerCTAText, { fontFamily: F.regular }]}>
+                Register for an event to activate BUZR
               </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('EmergencyApps')}>
-                <Text style={[styles.manageLink, { fontFamily: F.regular }]}>Manage ›</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.emergencyChipRow}>
-              {emergencyApps.slice(0, 4).map((app) => (
-                <View key={app} style={styles.emergencyChip}>
-                  <Text style={styles.emergencyChipIcon}>{EMERGENCY_ICONS[app] ?? '📱'}</Text>
-                  <Text style={[styles.emergencyChipLabel, { fontFamily: F.regular }]}>{app}</Text>
-                </View>
-              ))}
-              {emergencyApps.length > 4 && (
-                <Text style={styles.emergencyMore}>+{emergencyApps.length - 4}</Text>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* ── Register CTA (when no events registered) ── */}
-        {registeredEvents.length === 0 && (
-          <TouchableOpacity
-            style={styles.registerCTA}
-            onPress={() => navigation.navigate('EventList')}
-          >
-            <Ionicons name="add-circle-outline" size={18} color="#818CF8" />
-            <Text style={[styles.registerCTAText, { fontFamily: F.regular }]}>
-              Register for an event to activate BUZR
-            </Text>
-            <Ionicons name="chevron-forward" size={14} color="#3F3F5A" />
-          </TouchableOpacity>
-        )}
+              <Ionicons name="chevron-forward" size={14} color="#3F3F5A" />
+            </AnimatedPressCard>
+          )}
+        </Animated.View>
 
       </ScrollView>
     </SafeAreaView>
   );
 }
-
 // ─── Atmosphere strip styles ──────────────────────────────────────────────────
 const atmosStyles = StyleSheet.create({
   strip: {
@@ -786,5 +874,49 @@ const styles = StyleSheet.create({
     borderColor: '#818CF822',
   },
   registerCTAText: { flex: 1, fontSize: 13, color: '#3F3F5A' },
+
+  // Header BUZRLogo
+  headerLogo: { flex: 1 },
+
+  // Upcoming events strip (fills bottom blank space)
+  upcomingStrip: {
+    width: '100%',
+    backgroundColor: '#0F0F1A',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#818CF833',
+  },
+  upcomingStripHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 10,
+  },
+  upcomingStripTitle: {
+    flex: 1,
+    fontSize: 10,
+    color: '#818CF8',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  upcomingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1A1A2A',
+  },
+  upcomingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  upcomingInfo: { flex: 1 },
+  upcomingName: { fontSize: 14, color: '#F1F5F9', marginBottom: 2 },
+  upcomingVenue: { fontSize: 11, color: '#475569' },
+  upcomingType: { fontSize: 20 },
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,11 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import useEntranceAnimation from '../hooks/useEntranceAnimation';
+import AnimatedPressCard from '../components/AnimatedPressCard';
 
 const DIAL_KEYS = [
   ['1', '2', '3'],
@@ -35,6 +38,20 @@ const KEY_SUB = {
 export default function PhoneScreen() {
   const [dialValue, setDialValue] = useState('');
 
+  // Entrance animations
+  const headerAnim = useEntranceAnimation({ delay: 0,   fromY: -16, duration: 360 });
+  const displayAnim= useEntranceAnimation({ delay: 80,  fromY: 12,  duration: 360 });
+  const padAnim    = useEntranceAnimation({ delay: 180, fromY: 20,  duration: 400 });
+  const callAnim   = useEntranceAnimation({ delay: 300, fromY: 14,  duration: 360 });
+
+  useEffect(() => {
+    headerAnim.start();
+    displayAnim.start();
+    padAnim.start();
+    callAnim.start();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleKey = (key) => {
     if (dialValue.length >= 15) return;
     setDialValue((prev) => prev + key);
@@ -60,7 +77,6 @@ export default function PhoneScreen() {
   };
 
   const formatDisplay = (raw) => {
-    // Simple US-style formatting as user types
     const digits = raw.replace(/\D/g, '');
     if (digits.length <= 3) return digits;
     if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
@@ -71,14 +87,24 @@ export default function PhoneScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header icon */}
-      <View style={styles.header}>
+      {/* Header — slide down */}
+      <Animated.View
+        style={[
+          styles.header,
+          { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] },
+        ]}
+      >
         <Ionicons name="call-outline" size={32} color="#22C55E" />
         <Text style={styles.headerTitle}>Phone</Text>
-      </View>
+      </Animated.View>
 
-      {/* Display */}
-      <View style={styles.display}>
+      {/* Display — fade in */}
+      <Animated.View
+        style={[
+          styles.display,
+          { opacity: displayAnim.opacity, transform: [{ translateY: displayAnim.translateY }] },
+        ]}
+      >
         <Text style={styles.displayText} numberOfLines={1} adjustsFontSizeToFit>
           {dialValue ? formatDisplay(dialValue) : 'Enter a number'}
         </Text>
@@ -94,40 +120,47 @@ export default function PhoneScreen() {
         )}
       </View>
 
-      {/* Dial Pad */}
-      <View style={styles.dialPad}>
+      {/* Dial Pad — slide up */}
+      <Animated.View
+        style={[
+          styles.dialPad,
+          { opacity: padAnim.opacity, transform: [{ translateY: padAnim.translateY }] },
+        ]}
+      >
         {DIAL_KEYS.map((row, ri) => (
           <View key={ri} style={styles.dialRow}>
             {row.map((key) => (
-              <TouchableOpacity
+              <AnimatedPressCard
                 key={key}
                 style={styles.dialKey}
                 onPress={() => handleKey(key)}
-                activeOpacity={0.7}
-                accessibilityLabel={`Dial ${key}`}
+                scaleTo={0.88}
               >
                 <Text style={styles.dialKeyMain}>{key}</Text>
                 {KEY_SUB[key] ? (
                   <Text style={styles.dialKeySub}>{KEY_SUB[key]}</Text>
                 ) : null}
-              </TouchableOpacity>
+              </AnimatedPressCard>
             ))}
           </View>
         ))}
-      </View>
+      </Animated.View>
 
-      {/* Call button */}
-      <View style={styles.callRow}>
-        <TouchableOpacity
+      {/* Call button — slide up last */}
+      <Animated.View
+        style={[
+          styles.callRow,
+          { opacity: callAnim.opacity, transform: [{ translateY: callAnim.translateY }] },
+        ]}
+      >
+        <AnimatedPressCard
           style={styles.callButton}
           onPress={handleCall}
-          activeOpacity={0.85}
-          accessibilityLabel="Call"
-          accessibilityRole="button"
+          scaleTo={0.92}
         >
           <Ionicons name="call" size={32} color="#FFFFFF" />
-        </TouchableOpacity>
-      </View>
+        </AnimatedPressCard>
+      </Animated.View>
 
       <Text style={styles.accessNote}>
         Always available — even during event restrictions.

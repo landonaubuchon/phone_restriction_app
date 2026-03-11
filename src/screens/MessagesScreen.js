@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,8 +11,11 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import useEntranceAnimation from '../hooks/useEntranceAnimation';
+import AnimatedPressCard from '../components/AnimatedPressCard';
 
 const SAMPLE_THREADS = [
   {
@@ -36,6 +39,12 @@ const SAMPLE_THREADS = [
     time: '4:30 PM',
     unread: 0,
   },
+];
+
+const PINNED_CONTACTS = [
+  { id: 'p1', name: 'Sarah K.', initials: 'SK', role: 'Event buddy', phone: '', color: '#EF4444' },
+  { id: 'p2', name: 'Venue Staff', initials: 'VS', role: 'Row C · Seats 14-15', phone: '', color: '#F59E0B' },
+  { id: 'p3', name: 'Emergency', initials: '🚨', role: '911 — always available', phone: '911', color: '#22C55E' },
 ];
 
 function ThreadItem({ thread, onPress }) {
@@ -64,6 +73,20 @@ function ThreadItem({ thread, onPress }) {
 
 export default function MessagesScreen() {
   const [newNumber, setNewNumber] = useState('');
+
+  // Entrance animation
+  const headerAnim  = useEntranceAnimation({ delay: 0,   fromY: -16, duration: 360 });
+  const inputAnim   = useEntranceAnimation({ delay: 100, fromY: 16,  duration: 360 });
+  const listAnim    = useEntranceAnimation({ delay: 200, fromY: 20,  duration: 400 });
+  const bottomAnim  = useEntranceAnimation({ delay: 300, fromY: 16,  duration: 360 });
+
+  useEffect(() => {
+    headerAnim.start();
+    inputAnim.start();
+    listAnim.start();
+    bottomAnim.start();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openSMS = async (to = '') => {
     const url = `sms:${to}`;
@@ -94,8 +117,13 @@ export default function MessagesScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Header */}
-        <View style={styles.header}>
+        {/* Header — slide down */}
+        <Animated.View
+          style={[
+            styles.header,
+            { opacity: headerAnim.opacity, transform: [{ translateY: headerAnim.translateY }] },
+          ]}
+        >
           <Ionicons name="chatbubble-outline" size={28} color="#3B82F6" />
           <Text style={styles.headerTitle}>Messages</Text>
           <TouchableOpacity
@@ -105,10 +133,15 @@ export default function MessagesScreen() {
           >
             <Ionicons name="create-outline" size={24} color="#3B82F6" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
-        {/* New Message Row */}
-        <View style={styles.newMessageBar}>
+        {/* New Message Row — slide up */}
+        <Animated.View
+          style={[
+            styles.newMessageBar,
+            { opacity: inputAnim.opacity, transform: [{ translateY: inputAnim.translateY }] },
+          ]}
+        >
           <TextInput
             style={styles.numberInput}
             placeholder="Phone number or name"
@@ -126,23 +159,70 @@ export default function MessagesScreen() {
           >
             <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
-        {/* Thread List */}
-        <ScrollView style={styles.threadList}>
+        {/* Thread List — slide up staggered */}
+        <Animated.ScrollView
+          style={{ opacity: listAnim.opacity }}
+        >
           <Text style={styles.sectionLabel}>Recent</Text>
           {SAMPLE_THREADS.map((thread) => (
-            <ThreadItem
+            <AnimatedPressCard
               key={thread.id}
-              thread={thread}
+              style={styles.thread}
               onPress={() => openSMS('')}
-            />
+              scaleTo={0.98}
+            >
+              <View style={styles.threadAvatar}>
+                <Text style={styles.threadAvatarText}>{thread.name[0]}</Text>
+              </View>
+              <View style={styles.threadContent}>
+                <View style={styles.threadHeader}>
+                  <Text style={styles.threadName}>{thread.name}</Text>
+                  <Text style={styles.threadTime}>{thread.time}</Text>
+                </View>
+                <Text style={styles.threadPreview} numberOfLines={1}>
+                  {thread.lastMessage}
+                </Text>
+              </View>
+              {thread.unread > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadText}>{thread.unread}</Text>
+                </View>
+              )}
+            </AnimatedPressCard>
           ))}
-        </ScrollView>
 
-        <Text style={styles.accessNote}>
+          {/* Divider + pinned contacts section — fills blank space */}
+          <Text style={styles.sectionLabel}>Pinned Contacts</Text>
+          {PINNED_CONTACTS.map((c) => (
+            <AnimatedPressCard
+              key={c.id}
+              style={styles.pinnedRow}
+              onPress={() => openSMS(c.phone)}
+              scaleTo={0.97}
+            >
+              <View style={[styles.pinnedAvatar, { backgroundColor: c.color + '33' }]}>
+                <Text style={[styles.pinnedAvatarText, { color: c.color }]}>{c.initials}</Text>
+              </View>
+              <View style={styles.threadContent}>
+                <Text style={styles.threadName}>{c.name}</Text>
+                <Text style={styles.threadPreview}>{c.role}</Text>
+              </View>
+              <Ionicons name="call-outline" size={18} color="#3F3F5A" />
+            </AnimatedPressCard>
+          ))}
+        </Animated.ScrollView>
+
+        {/* Footer note — fade in last */}
+        <Animated.Text
+          style={[
+            styles.accessNote,
+            { opacity: bottomAnim.opacity },
+          ]}
+        >
           Always available — even during event restrictions.
-        </Text>
+        </Animated.Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -259,5 +339,26 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     paddingVertical: 10,
     paddingHorizontal: 32,
+  },
+  // Pinned contacts
+  pinnedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0F0F1A',
+    gap: 14,
+  },
+  pinnedAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pinnedAvatarText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

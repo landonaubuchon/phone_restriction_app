@@ -1,13 +1,20 @@
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
+import {
+  Oswald_700Bold,
+  Oswald_600SemiBold,
+  Oswald_400Regular,
+} from '@expo-google-fonts/oswald';
 
 import { AppProvider, useAppContext } from './src/context/AppContext';
+import SimulatedAppScreen from './src/screens/SimulatedAppScreen';
 
 // Screens — base function tabs
 import ShotClockScreen from './src/screens/ShotClockScreen';
@@ -144,7 +151,7 @@ function RootNavigator() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#0A0A0F', alignItems: 'center', justifyContent: 'center' }}>
+      <View style={appStyles.splash}>
         <ActivityIndicator size="large" color="#EF4444" />
       </View>
     );
@@ -174,12 +181,34 @@ function RootNavigator() {
       <Stack.Screen name="Profile" component={ProfileScreen} options={{ title: 'Profile' }} />
       <Stack.Screen name="Flashlight" component={FlashlightScreen} options={{ title: 'Flashlight' }} />
       <Stack.Screen name="Simulation" component={SimulationScreen} options={{ title: 'Simulation' }} />
+      <Stack.Screen
+        name="SimulatedApp"
+        component={SimulatedAppScreen}
+        options={({ route }) => ({ title: route.params?.appName ?? 'Emergency App' })}
+      />
     </Stack.Navigator>
   );
 }
 
 // ─── App root ─────────────────────────────────────────────────────────────────
 export default function App() {
+  const [fontsLoaded, fontError] = useFonts({
+    Oswald_700Bold,
+    Oswald_600SemiBold,
+    Oswald_400Regular,
+  });
+
+  // Block render until fonts are ready so no component ever receives an
+  // unknown fontFamily reference.  fontError falls through to allow the app
+  // to render with system-font fallback rather than hanging indefinitely.
+  if (!fontsLoaded && !fontError) {
+    return (
+      <View style={appStyles.splash}>
+        <ActivityIndicator size="large" color="#EF4444" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <AppProvider>
@@ -191,3 +220,12 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const appStyles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    backgroundColor: '#0A0A0F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

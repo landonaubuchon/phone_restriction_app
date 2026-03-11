@@ -9,17 +9,19 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
+import { F } from '../theme/fonts';
 
 const PRESET_EMERGENCY_APPS = [
-  { name: 'Glucose Monitor', icon: '🩸', category: 'Medical' },
-  { name: 'Insulin', icon: '💉', category: 'Medical' },
-  { name: 'Heart Monitor', icon: '❤️‍🩹', category: 'Medical' },
-  { name: 'Maps', icon: '🗺️', category: 'Safety' },
-  { name: 'Wallet', icon: '💳', category: 'Convenience' },
+  { name: 'Glucose Monitor', icon: '🩸', category: 'Medical',      hasSimulation: true  },
+  { name: 'Insulin',         icon: '💉', category: 'Medical',      hasSimulation: true  },
+  { name: 'Heart Monitor',   icon: '❤️‍🩹', category: 'Medical',   hasSimulation: true  },
+  { name: 'Maps',            icon: '🗺️', category: 'Safety',       hasSimulation: true  },
+  { name: 'Wallet',          icon: '💳', category: 'Convenience',  hasSimulation: true  },
 ];
 
-export default function EmergencyAppsScreen() {
+export default function EmergencyAppsScreen({ navigation }) {
   const { emergencyApps, updateEmergencyApps } = useAppContext();
   const [customApp, setCustomApp] = useState('');
 
@@ -50,7 +52,7 @@ export default function EmergencyAppsScreen() {
 
   const removeCustomApp = (appName) => {
     const isPreset = PRESET_EMERGENCY_APPS.some((a) => a.name === appName);
-    if (isPreset) return; // Use toggle for presets
+    if (isPreset) return;
     Alert.alert(
       'Remove App',
       `Remove "${appName}" from emergency apps?`,
@@ -68,45 +70,59 @@ export default function EmergencyAppsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Info banner */}
         <View style={styles.infoBox}>
           <Text style={styles.infoIcon}>🏥</Text>
           <View style={styles.infoContent}>
-            <Text style={styles.infoTitle}>Emergency App Access</Text>
+            <Text style={[styles.infoTitle, { fontFamily: F.black }]}>Emergency App Access</Text>
             <Text style={styles.infoBody}>
               Select apps that must remain accessible for medical or safety reasons.
-              These apps will stay unrestricted even during active events.
+              Tap <Text style={styles.betaLinkText}>View Beta Data</Text> on
+              any enabled app to see simulated live readings.
             </Text>
           </View>
         </View>
 
         {/* Preset Apps */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Common Medical & Safety Apps</Text>
+          <Text style={[styles.sectionTitle, { fontFamily: F.black }]}>
+            Medical &amp; Safety Apps
+          </Text>
           {PRESET_EMERGENCY_APPS.map((app) => {
             const isEnabled = (emergencyApps || []).includes(app.name);
             return (
-              <TouchableOpacity
-                key={app.name}
-                style={styles.appRow}
-                onPress={() => toggleApp(app.name)}
-                activeOpacity={0.8}
-              >
+              <View key={app.name} style={styles.appRow}>
                 <Text style={styles.appIcon}>{app.icon}</Text>
                 <View style={styles.appInfo}>
-                  <Text style={styles.appName}>{app.name}</Text>
+                  <Text style={[styles.appName, { fontFamily: F.semiBold }]}>{app.name}</Text>
                   <Text style={styles.appCategory}>{app.category}</Text>
                 </View>
-                <View style={[styles.toggle, isEnabled && styles.toggleOn]}>
-                  <View style={[styles.toggleThumb, isEnabled && styles.toggleThumbOn]} />
-                </View>
-              </TouchableOpacity>
+
+                {/* Beta simulation button — only when app is enabled */}
+                {isEnabled && app.hasSimulation && (
+                  <TouchableOpacity
+                    style={styles.betaBtn}
+                    onPress={() => navigation.navigate('SimulatedApp', { appName: app.name })}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="pulse" size={12} color="#818CF8" />
+                    <Text style={[styles.betaBtnText, { fontFamily: F.regular }]}>Beta</Text>
+                  </TouchableOpacity>
+                )}
+
+                <TouchableOpacity onPress={() => toggleApp(app.name)} activeOpacity={0.8}>
+                  <View style={[styles.toggle, isEnabled && styles.toggleOn]}>
+                    <View style={[styles.toggleThumb, isEnabled && styles.toggleThumbOn]} />
+                  </View>
+                </TouchableOpacity>
+              </View>
             );
           })}
         </View>
 
         {/* Custom Apps */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Custom Emergency Apps</Text>
+          <Text style={[styles.sectionTitle, { fontFamily: F.black }]}>Custom Emergency Apps</Text>
           <Text style={styles.sectionSubtitle}>
             Add any specific app by name. Our team will review your request.
           </Text>
@@ -122,7 +138,7 @@ export default function EmergencyAppsScreen() {
               returnKeyType="done"
             />
             <TouchableOpacity style={styles.addButton} onPress={addCustomApp}>
-              <Text style={styles.addButtonText}>Add</Text>
+              <Text style={[styles.addButtonText, { fontFamily: F.semiBold }]}>Add</Text>
             </TouchableOpacity>
           </View>
 
@@ -148,9 +164,8 @@ export default function EmergencyAppsScreen() {
 
         <View style={styles.legalNote}>
           <Text style={styles.legalNoteText}>
-            ⚖️ Emergency app allowances are subject to review. In line with our accessibility
-            policy, all medical necessity requests will be approved. False submissions may
-            result in account suspension.
+            ⚖️ Emergency app allowances are subject to review. All medical necessity requests will
+            be approved. False submissions may result in account suspension.
           </Text>
         </View>
       </ScrollView>
@@ -173,8 +188,9 @@ const styles = StyleSheet.create({
   },
   infoIcon: { fontSize: 28 },
   infoContent: { flex: 1 },
-  infoTitle: { fontSize: 16, fontWeight: '700', color: '#BFDBFE', marginBottom: 4 },
+  infoTitle: { fontSize: 16, color: '#BFDBFE', marginBottom: 4, fontFamily: undefined },
   infoBody: { fontSize: 13, color: '#93C5FD', lineHeight: 19 },
+  betaLinkText: { color: '#818CF8', fontWeight: '700' },
   section: {
     backgroundColor: '#1E293B',
     borderRadius: 16,
@@ -193,8 +209,22 @@ const styles = StyleSheet.create({
   },
   appIcon: { fontSize: 24 },
   appInfo: { flex: 1 },
-  appName: { fontSize: 15, fontWeight: '600', color: '#F1F5F9' },
+  appName: { fontSize: 15, color: '#F1F5F9' },
   appCategory: { fontSize: 12, color: '#64748B', marginTop: 1 },
+  // Beta simulation button
+  betaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#1E1033',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#818CF855',
+    marginRight: 8,
+  },
+  betaBtnText: { fontSize: 11, color: '#818CF8' },
   toggle: {
     width: 48,
     height: 28,

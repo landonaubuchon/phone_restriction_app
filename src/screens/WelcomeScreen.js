@@ -8,7 +8,9 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
+import { F } from '../theme/fonts';
 
 export default function WelcomeScreen({ navigation }) {
   const { giveConsent } = useAppContext();
@@ -26,75 +28,71 @@ export default function WelcomeScreen({ navigation }) {
     );
   };
 
+  const features = [
+    { icon: 'lock-closed',     color: '#EF4444', text: 'Locks non-essential apps inside venues' },
+    { icon: 'call',            color: '#22C55E', text: 'Keeps Phone, Messages & Camera available' },
+    { icon: 'medkit',          color: '#F87171', text: 'Allows emergency app exceptions' },
+    { icon: 'location',        color: '#818CF8', text: 'Unlocks automatically when you leave' },
+    { icon: 'ticket',          color: '#F59E0B', text: 'Activates instantly on gate ticket scan' },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Text style={styles.emoji}>🔒</Text>
-          <Text style={styles.title}>BUZR</Text>
-          <Text style={styles.subtitle}>The event phone-restriction platform.</Text>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+
+        {/* ── Hero ── */}
+        <View style={styles.hero}>
+          {/* Decorative sport emoji ring */}
+          <View style={styles.emojiRing}>
+            <Text style={[styles.ringEmoji, { top: 0, left: '50%', marginLeft: -12 }]}>🏀</Text>
+            <Text style={[styles.ringEmoji, { top: 20, right: 10 }]}>🎵</Text>
+            <Text style={[styles.ringEmoji, { top: 20, left: 10 }]}>🎬</Text>
+            <Text style={[styles.ringEmoji, { bottom: 10, right: 20 }]}>🎭</Text>
+            <Text style={[styles.ringEmoji, { bottom: 10, left: 20 }]}>🏆</Text>
+            <View style={styles.lockCircle}>
+              <Text style={styles.lockEmoji}>🔒</Text>
+            </View>
+          </View>
+
+          <Text style={[styles.title, { fontFamily: F.black }]}>BUZR</Text>
+          <Text style={styles.tagline}>The event phone-restriction platform</Text>
         </View>
 
+        {/* ── What BUZR Does ── */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>What is BUZR?</Text>
-          <Text style={styles.body}>
-            BUZR partners with ticketing services and venues to automatically restrict
-            non-essential phone functions during live events — concerts, sporting events, movies,
-            and more — so you and everyone around you can be fully present.
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>How it works</Text>
-          {[
-            {
-              icon: '🎟️',
-              text: 'Register your ticket and link it to an event.',
-            },
-            {
-              icon: '📍',
-              text: 'When you arrive at the venue, the app detects your proximity and activates restrictions.',
-            },
-            {
-              icon: '⏱️',
-              text: 'Restrictions are also time-based — activating 30 minutes before the event and lasting 30 minutes after it ends.',
-            },
-            {
-              icon: '📞',
-              text: 'Phone calls, messages, and camera (with time limits) remain available at all times.',
-            },
-            {
-              icon: '🏥',
-              text: 'Register emergency apps (e.g. glucose monitor) to keep them accessible regardless.',
-            },
-          ].map((item, i) => (
-            <View key={i} style={styles.featureRow}>
-              <Text style={styles.featureIcon}>{item.icon}</Text>
-              <Text style={styles.featureText}>{item.text}</Text>
+          <Text style={[styles.sectionTitle, { fontFamily: F.black }]}>WHAT BUZR DOES</Text>
+          {features.map(({ icon, color, text }) => (
+            <View key={text} style={styles.featureRow}>
+              <View style={[styles.featureIconCircle, { backgroundColor: color + '22' }]}>
+                <Ionicons name={icon} size={18} color={color} />
+              </View>
+              <Text style={styles.featureText}>{text}</Text>
             </View>
           ))}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Your Consent</Text>
-          <Text style={styles.body}>
-            By tapping <Text style={styles.bold}>Accept &amp; Continue</Text>, you consent to BUZR
-            restricting non-essential phone functions while you are at a registered event.
-            You may revoke consent at any time in your profile settings.
-          </Text>
-          <Text style={styles.legalNote}>
-            Emergency features (calls, texts) are always available. You can register medical or
-            safety-critical apps to keep them unrestricted.
+        {/* ── Consent block ── */}
+        <View style={styles.consentBlock}>
+          <Text style={[styles.consentTitle, { fontFamily: F.black }]}>YOUR CONSENT</Text>
+          <Text style={styles.consentBody}>
+            By tapping <Text style={styles.bold}>Accept &amp; Continue</Text>, you agree to let
+            BUZR restrict non-essential apps while you're at a registered event. Emergency
+            features (calls, texts) are always available, and you can add medical app exceptions.
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.agreeButton} onPress={handleConsent}>
-          <Text style={styles.agreeButtonText}>Accept &amp; Continue</Text>
+        {/* ── CTA Buttons ── */}
+        <TouchableOpacity style={styles.agreeButton} onPress={handleConsent} activeOpacity={0.85}>
+          <Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+          <Text style={[styles.agreeButtonText, { fontFamily: F.black }]}>
+            ACCEPT &amp; CONTINUE
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.declineButton} onPress={handleDecline}>
+        <TouchableOpacity style={styles.declineButton} onPress={handleDecline} activeOpacity={0.8}>
           <Text style={styles.declineButtonText}>Continue Without Restrictions</Text>
         </TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -103,52 +101,123 @@ export default function WelcomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0A0A0F' },
   scroll: { padding: 24, paddingBottom: 48 },
-  header: { alignItems: 'center', marginBottom: 32, marginTop: 16 },
-  emoji: { fontSize: 64, marginBottom: 12 },
-  title: { fontSize: 36, fontWeight: '800', color: '#EF4444', letterSpacing: 1 },
-  subtitle: { fontSize: 16, color: '#94A3B8', marginTop: 4, fontStyle: 'italic' },
+
+  // Hero
+  hero: { alignItems: 'center', marginBottom: 28, marginTop: 8 },
+  emojiRing: {
+    width: 120,
+    height: 120,
+    position: 'relative',
+    marginBottom: 16,
+  },
+  ringEmoji: { position: 'absolute', fontSize: 20 },
+  lockCircle: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginTop: -24,
+    marginLeft: -24,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#1E1E2E',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#EF444433',
+  },
+  lockEmoji: { fontSize: 26 },
+  title: {
+    fontSize: 56,
+    color: '#EF4444',
+    letterSpacing: 10,
+    textShadowColor: '#EF4444',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 20,
+  },
+  tagline: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 6,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+
+  // Features section
   section: {
     backgroundColor: '#0F0F1A',
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#1E1E2E',
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
+    fontSize: 12,
     color: '#EF4444',
-    marginBottom: 12,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+    marginBottom: 14,
+    letterSpacing: 3,
   },
-  body: { fontSize: 15, color: '#CBD5E1', lineHeight: 22 },
-  featureRow: { flexDirection: 'row', marginBottom: 12, alignItems: 'flex-start' },
-  featureIcon: { fontSize: 22, marginRight: 12, marginTop: 1 },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E1E2E',
+  },
+  featureIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   featureText: { flex: 1, fontSize: 14, color: '#CBD5E1', lineHeight: 21 },
-  legalNote: {
-    fontSize: 13,
-    color: '#64748B',
-    marginTop: 10,
-    lineHeight: 19,
-    fontStyle: 'italic',
+
+  // Consent block
+  consentBlock: {
+    backgroundColor: '#0F0F1A',
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#EF444422',
+    borderLeftWidth: 3,
+    borderLeftColor: '#EF4444',
   },
+  consentTitle: {
+    fontSize: 12,
+    color: '#EF4444',
+    marginBottom: 10,
+    letterSpacing: 3,
+  },
+  consentBody: { fontSize: 14, color: '#94A3B8', lineHeight: 22 },
   bold: { fontWeight: '700', color: '#F1F5F9' },
+
+  // Buttons
   agreeButton: {
     backgroundColor: '#EF4444',
-    borderRadius: 14,
-    paddingVertical: 16,
+    borderRadius: 16,
+    paddingVertical: 18,
     alignItems: 'center',
     marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
-  agreeButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  agreeButtonText: { color: '#FFFFFF', fontSize: 16, letterSpacing: 2 },
   declineButton: {
-    borderRadius: 14,
+    borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#334155',
+    borderColor: '#1E293B',
   },
-  declineButtonText: { color: '#94A3B8', fontSize: 15 },
+  declineButtonText: { color: '#475569', fontSize: 14 },
 });

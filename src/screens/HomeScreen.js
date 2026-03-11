@@ -10,6 +10,7 @@ import {
 import { useAppContext } from '../context/AppContext';
 import { isEventActive, isEventUpcoming, formatTime, formatDate } from '../utils/restrictionUtils';
 import { EVENT_TYPE_ICONS, EVENT_TYPE_COLORS } from '../data/sampleEvents';
+import { F } from '../theme/fonts';
 
 function EventCard({ event, isRegistered, onPress }) {
   const active = isEventActive(event);
@@ -39,7 +40,9 @@ function EventCard({ event, isRegistered, onPress }) {
           </View>}
         </View>
 
-        <Text style={styles.eventName}>{event.name}</Text>
+        <Text style={styles.eventName} numberOfLines={1}>
+            {event.name}
+          </Text>
         <Text style={styles.venue}>📍 {event.venue}</Text>
         <View style={styles.timeRow}>
           <Text style={styles.timeText}>
@@ -134,7 +137,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 8,
   },
-  heading: { flex: 1, fontSize: 24, fontWeight: '800', color: '#F1F5F9' },
+  heading: { flex: 1, fontSize: 28, color: '#F1F5F9', fontFamily: F.black },
   profileIcon: { fontSize: 26 },
   list: { padding: 16, gap: 12 },
   card: {
@@ -158,7 +161,7 @@ const styles = StyleSheet.create({
   upcomingBadge: { backgroundColor: '#1C1917' },
   registeredBadge: { backgroundColor: '#14532D' },
   statusText: { fontSize: 11, color: '#F1F5F9', fontWeight: '600' },
-  eventName: { fontSize: 17, fontWeight: '700', color: '#F1F5F9', marginBottom: 4 },
+  eventName: { fontSize: 18, fontFamily: F.black, color: '#F1F5F9', marginBottom: 4 },
   venue: { fontSize: 13, color: '#94A3B8', marginBottom: 4 },
   timeRow: { marginTop: 2 },
   timeText: { fontSize: 13, color: '#64748B' },

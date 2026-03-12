@@ -162,9 +162,10 @@ export default function MessagesScreen() {
         </Animated.View>
 
         {/* Thread List — slide up staggered */}
-        <Animated.ScrollView
-          style={{ opacity: listAnim.opacity }}
+        <Animated.View
+          style={{ flex: 1, opacity: listAnim.opacity, transform: [{ translateY: listAnim.translateY }] }}
         >
+          <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
           <Text style={styles.sectionLabel}>Recent</Text>
           {SAMPLE_THREADS.map((thread) => (
             <AnimatedPressCard
@@ -212,7 +213,8 @@ export default function MessagesScreen() {
               <Ionicons name="call-outline" size={18} color="#3F3F5A" />
             </AnimatedPressCard>
           ))}
-        </Animated.ScrollView>
+          </ScrollView>
+        </Animated.View>
 
         {/* Footer note — fade in last */}
         <Animated.Text

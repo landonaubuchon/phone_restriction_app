@@ -124,7 +124,7 @@ export default function CameraScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.centeredMessage}>
           <View style={styles.lockedIconRing}>
-            <Ionicons name="camera-off-outline" size={40} color="#EF4444" />
+            <Ionicons name="ban-outline" size={40} color="#EF4444" />
           </View>
           <Text style={styles.lockedTitle}>Camera Restricted</Text>
           <Text style={styles.lockedBody}>

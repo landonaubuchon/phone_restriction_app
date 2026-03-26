@@ -7,7 +7,6 @@ import {
   Modal,
   TextInput,
   Alert,
-  ScrollView,
   SafeAreaView,
   Platform,
 } from 'react-native';
@@ -30,8 +29,10 @@ const DEFAULT_REGION = {
  * Allows the admin to:
  *  1. Long-press anywhere on the map to drop a venue pin.
  *  2. Adjust the proximity radius (metres) for the geofence.
- *  3. Name the event and start it, which engages the BUZR lock.
- *  4. End the active event and release the lock.
+ *  3. Set the camera animation duration (seconds) used when flying to the pin.
+ *  4. Name the event and start it, which engages the BUZR lock.
+ *  5. End the active event and release the lock.
+ *  6. Re-fly the camera to the active pin at any time.
  */
 export default function AdminMapScreen() {
   const { activeEvent, startEvent, endEvent } = useVenue();
@@ -39,8 +40,28 @@ export default function AdminMapScreen() {
 
   const [pendingPin, setPendingPin] = useState(null);          // { latitude, longitude }
   const [radiusMeters, setRadiusMeters] = useState(200);       // default 200 m
+  const [cameraDuration, setCameraDuration] = useState(1.5);   // seconds (0.5 – 10)
   const [showModal, setShowModal] = useState(false);
   const [eventName, setEventName] = useState('');
+
+  // ── Animate the map camera to a coordinate ───────────────────────────────
+  const flyToPin = useCallback(
+    (coordinate, durationOverride) => {
+      if (!mapRef.current || !coordinate) return;
+      const ms = Math.round((durationOverride ?? cameraDuration) * 1000);
+      mapRef.current.animateCamera(
+        {
+          center: coordinate,
+          zoom: 16,
+          altitude: 500,
+          pitch: 45,
+          heading: 0,
+        },
+        { duration: ms },
+      );
+    },
+    [cameraDuration],
+  );
 
   // ── Drop pin on long-press ───────────────────────────────────────────────
   const handleMapLongPress = useCallback(
@@ -51,8 +72,10 @@ export default function AdminMapScreen() {
       }
       const { coordinate } = e.nativeEvent;
       setPendingPin(coordinate);
+      // Fly camera to the new pin immediately
+      flyToPin(coordinate);
     },
-    [activeEvent],
+    [activeEvent, flyToPin],
   );
 
   // ── Open the "start event" modal ─────────────────────────────────────────
@@ -76,7 +99,9 @@ export default function AdminMapScreen() {
       radiusMeters,
     });
     setShowModal(false);
-  }, [eventName, pendingPin, radiusMeters, startEvent]);
+    // Fly camera to event pin with the configured animation duration
+    flyToPin(pendingPin);
+  }, [eventName, pendingPin, radiusMeters, startEvent, flyToPin]);
 
   // ── End active event ──────────────────────────────────────────────────────
   const handleEndEvent = useCallback(() => {
@@ -138,6 +163,27 @@ export default function AdminMapScreen() {
 
       {/* Controls panel */}
       <View style={styles.panel}>
+        {/* Camera animation duration (always visible) */}
+        <View style={styles.radiusRow}>
+          <Text style={styles.radiusLabel}>
+            Camera speed: {cameraDuration.toFixed(1)} s
+          </Text>
+          <View style={styles.radiusBtns}>
+            <TouchableOpacity
+              style={styles.radiusBtn}
+              onPress={() => setCameraDuration((d) => Math.max(0.5, parseFloat((d - 0.5).toFixed(1))))}
+            >
+              <Text style={styles.radiusBtnText}>−</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.radiusBtn}
+              onPress={() => setCameraDuration((d) => Math.min(10, parseFloat((d + 0.5).toFixed(1))))}
+            >
+              <Text style={styles.radiusBtnText}>＋</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Radius slider simulation via ＋/－ buttons */}
         {!activeEvent && (
           <View style={styles.radiusRow}>
@@ -162,6 +208,12 @@ export default function AdminMapScreen() {
         {activeEvent ? (
           <View style={styles.activeRow}>
             <Text style={styles.activeLabel}>🔒 {activeEvent.name}</Text>
+            <TouchableOpacity
+              style={styles.flyBtn}
+              onPress={() => flyToPin({ latitude: activeEvent.latitude, longitude: activeEvent.longitude })}
+            >
+              <Text style={styles.flyBtnText}>📍 Fly</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.endBtn} onPress={handleEndEvent}>
               <Text style={styles.endBtnText}>End Event</Text>
             </TouchableOpacity>
@@ -201,6 +253,7 @@ export default function AdminMapScreen() {
               Location: {pendingPin?.latitude.toFixed(5)}, {pendingPin?.longitude.toFixed(5)}
             </Text>
             <Text style={styles.modalLabel}>Radius: {radiusMeters} m</Text>
+            <Text style={styles.modalLabel}>Camera flyover: {cameraDuration.toFixed(1)} s</Text>
 
             <View style={styles.modalBtns}>
               <TouchableOpacity
@@ -267,8 +320,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
-  activeLabel: { fontSize: 15, fontWeight: '700', color: PINK, flex: 1, marginRight: 8 },
+  activeLabel: { fontSize: 15, fontWeight: '700', color: PINK, flex: 1 },
+  flyBtn: {
+    backgroundColor: '#EDE9FE',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  flyBtnText: { color: PURPLE, fontWeight: '700', fontSize: 14 },
   endBtn: {
     backgroundColor: '#FEE2E2',
     borderRadius: 12,

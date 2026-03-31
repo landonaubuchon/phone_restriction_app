@@ -144,6 +144,24 @@ export default function ProfileScreen({ navigation }) {
           </Text>
         </View>
 
+        {/* Initiatives */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.initiativesRow}
+            onPress={() => navigation.navigate('Initiatives')}
+            activeOpacity={0.75}
+          >
+            <View style={styles.initiativesLeft}>
+              <Text style={styles.initiativesIcon}>🏆</Text>
+              <View>
+                <Text style={styles.initiativesTitle}>My Initiatives</Text>
+                <Text style={styles.initiativesSub}>Rewards for using BUZR Focus Mode</Text>
+              </View>
+            </View>
+            <Text style={styles.eventRowArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Emergency Apps */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -303,4 +321,17 @@ const styles = StyleSheet.create({
   aboutSection: { backgroundColor: '#1E293B' },
   aboutText: { fontSize: 12, color: '#64748B', marginBottom: 6, marginTop: -8 },
   aboutBody: { fontSize: 13, color: '#94A3B8', lineHeight: 19 },
+  initiativesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  initiativesLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  initiativesIcon: { fontSize: 28 },
+  initiativesTitle: { fontSize: 16, fontWeight: '700', color: '#F1F5F9', marginBottom: 2 },
+  initiativesSub: { fontSize: 12, color: '#64748B' },
 });

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SAMPLE_EVENTS } from '../data/sampleEvents';
 import { shouldRestrictionsBeActive, getAllowedApps } from '../utils/restrictionUtils';
@@ -11,8 +11,16 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'user_profile',
   REGISTERED_EVENTS: 'registered_events',
   CAMERA_USAGE: 'camera_usage',
-  TICKET_ACTIVATED: 'ticket_activated', // { [eventId]: true }
-  CUSTOM_EVENTS: 'custom_events',        // admin-created simulated events
+  TICKET_ACTIVATED: 'ticket_activated',   // { [eventId]: true }
+  CUSTOM_EVENTS: 'custom_events',          // admin-created simulated events
+  COMPLIANCE_STATS: 'compliance_stats',    // focus-lock compliance metrics
+};
+
+/** Default compliance stats — reset shape used on first install */
+const DEFAULT_COMPLIANCE = {
+  sessionsCount: 0,       // total number of Focus Mode activations
+  totalSecondsLocked: 0,  // cumulative seconds spent in Focus Mode
+  majorVenueComplied: false, // true once user focuses at a concert or sporting event
 };
 
 export const CAMERA_LIMIT_SECONDS = 15 * 60; // 15 minutes per event
@@ -52,6 +60,17 @@ export function AppProvider({ children }) {
     camera: false,
   });
 
+  // ── Voluntary Focus Lock ──────────────────────────────────────────────────
+  // focusLockActive is intentionally NOT persisted — the user must consciously
+  // re-enable Focus Mode each session. This keeps the mechanism genuinely
+  // voluntary and avoids surprising anyone on app restart.
+  const [focusLockActive, setFocusLockActive] = useState(false);
+  // focusLockStartRef tracks the wall-clock time when the current lock session
+  // began, purely for calculating elapsed seconds on disable.
+  const focusLockStartRef = useRef(null);
+  // complianceStats: persisted metrics used to drive the Initiatives screen.
+  const [complianceStats, setComplianceStats] = useState(DEFAULT_COMPLIANCE);
+
   // Merged event list: built-in sample events + admin-created custom events
   const events = useMemo(() => [...SAMPLE_EVENTS, ...customEvents], [customEvents]);
 
@@ -59,15 +78,17 @@ export function AppProvider({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const [consent, eApps, profile, regEvents, camUsage, ticketAct, custEvts] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.CONSENT_GIVEN),
-          AsyncStorage.getItem(STORAGE_KEYS.EMERGENCY_APPS),
-          AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
-          AsyncStorage.getItem(STORAGE_KEYS.REGISTERED_EVENTS),
-          AsyncStorage.getItem(STORAGE_KEYS.CAMERA_USAGE),
-          AsyncStorage.getItem(STORAGE_KEYS.TICKET_ACTIVATED),
-          AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_EVENTS),
-        ]);
+        const [consent, eApps, profile, regEvents, camUsage, ticketAct, custEvts, compliance] =
+          await Promise.all([
+            AsyncStorage.getItem(STORAGE_KEYS.CONSENT_GIVEN),
+            AsyncStorage.getItem(STORAGE_KEYS.EMERGENCY_APPS),
+            AsyncStorage.getItem(STORAGE_KEYS.USER_PROFILE),
+            AsyncStorage.getItem(STORAGE_KEYS.REGISTERED_EVENTS),
+            AsyncStorage.getItem(STORAGE_KEYS.CAMERA_USAGE),
+            AsyncStorage.getItem(STORAGE_KEYS.TICKET_ACTIVATED),
+            AsyncStorage.getItem(STORAGE_KEYS.CUSTOM_EVENTS),
+            AsyncStorage.getItem(STORAGE_KEYS.COMPLIANCE_STATS),
+          ]);
         if (consent === 'true') setConsentGiven(true);
         if (eApps) setEmergencyApps(JSON.parse(eApps));
         if (profile) setUserProfile(JSON.parse(profile));
@@ -75,6 +96,7 @@ export function AppProvider({ children }) {
         if (camUsage) setCameraUsage(JSON.parse(camUsage));
         if (ticketAct) setTicketActivated(JSON.parse(ticketAct));
         if (custEvts) setCustomEvents(JSON.parse(custEvts));
+        if (compliance) setComplianceStats({ ...DEFAULT_COMPLIANCE, ...JSON.parse(compliance) });
       } catch (e) {
         // Ignore storage errors
       } finally {
@@ -218,6 +240,49 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  // ── Voluntary Focus Lock callbacks ────────────────────────────────────────
+
+  /**
+   * Enable BUZR Focus Mode.  Records the start time and increments the
+   * session count.  If an active event is a concert or sporting event, marks
+   * the majorVenueComplied flag so the "Venue Legend" initiative can fire.
+   */
+  const enableFocusLock = useCallback((currentActiveEvent) => {
+    focusLockStartRef.current = Date.now();
+    setFocusLockActive(true);
+    setComplianceStats((prev) => {
+      const isMajor =
+        currentActiveEvent?.type === 'concert' || currentActiveEvent?.type === 'sporting';
+      const updated = {
+        ...prev,
+        sessionsCount: prev.sessionsCount + 1,
+        majorVenueComplied: prev.majorVenueComplied || isMajor,
+      };
+      AsyncStorage.setItem(STORAGE_KEYS.COMPLIANCE_STATS, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
+  /**
+   * Disable BUZR Focus Mode.  Accumulates elapsed seconds into
+   * totalSecondsLocked so the "Time Champion" initiative stays accurate.
+   */
+  const disableFocusLock = useCallback(() => {
+    const elapsed = focusLockStartRef.current
+      ? Math.round((Date.now() - focusLockStartRef.current) / 1000)
+      : 0;
+    focusLockStartRef.current = null;
+    setFocusLockActive(false);
+    setComplianceStats((prev) => {
+      const updated = {
+        ...prev,
+        totalSecondsLocked: prev.totalSecondsLocked + elapsed,
+      };
+      AsyncStorage.setItem(STORAGE_KEYS.COMPLIANCE_STATS, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+  }, []);
+
   /** [Admin] Add a custom simulated event and persist it. */
   const addCustomEvent = useCallback((event) => {
     setCustomEvents((prev) => {
@@ -274,6 +339,11 @@ export function AppProvider({ children }) {
         notifications,
         addNotification,
         clearNotification,
+        // Voluntary Focus Lock
+        focusLockActive,
+        enableFocusLock,
+        disableFocusLock,
+        complianceStats,
         // Admin controls
         simulatedLocation,
         setSimulatedLocation,

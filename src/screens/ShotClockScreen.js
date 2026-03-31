@@ -215,6 +215,9 @@ export default function ShotClockScreen({ navigation }) {
     consentGiven,
     notifications,
     clearNotification,
+    focusLockActive,
+    enableFocusLock,
+    disableFocusLock,
   } = useAppContext();
 
   const [secsToEnd, setSecsToEnd]     = useState(0);
@@ -424,6 +427,53 @@ export default function ShotClockScreen({ navigation }) {
               ) : null}
             </AnimatedPressCard>
           ))}
+        </Animated.View>
+
+        {/* ── Focus Mode toggle card ── */}
+        <Animated.View
+          style={[
+            styles.focusCard,
+            focusLockActive && styles.focusCardActive,
+            { opacity: gridAnim.opacity, transform: [{ translateY: gridAnim.translateY }] },
+          ]}
+        >
+          <View style={styles.focusCardLeft}>
+            <View style={[styles.focusIconCircle, focusLockActive && styles.focusIconCircleActive]}>
+              <Ionicons
+                name={focusLockActive ? 'lock-closed' : 'lock-open-outline'}
+                size={22}
+                color={focusLockActive ? '#EF4444' : '#3F3F5A'}
+              />
+            </View>
+            <View style={styles.focusCardText}>
+              <Text style={[styles.focusCardTitle, { fontFamily: F.black }]}>
+                {focusLockActive ? 'FOCUS MODE ACTIVE' : 'BUZR FOCUS MODE'}
+              </Text>
+              <Text style={[styles.focusCardSub, { fontFamily: F.regular }]}>
+                {focusLockActive
+                  ? 'Stay in BUZR — earns initiatives progress'
+                  : 'Voluntarily lock yourself to this app'}
+              </Text>
+            </View>
+          </View>
+          <AnimatedPressCard
+            style={[
+              styles.focusToggleBtn,
+              focusLockActive && styles.focusToggleBtnActive,
+            ]}
+            onPress={() => {
+              if (focusLockActive) {
+                disableFocusLock();
+              } else {
+                enableFocusLock(activeEvent);
+              }
+            }}
+            scaleTo={0.92}
+          >
+            <Text style={[styles.focusToggleText, { fontFamily: F.black }]}>
+              {focusLockActive ? 'EXIT' : 'START'}
+            </Text>
+          </AnimatedPressCard>
         </Animated.View>
 
         {/* ── Emergency apps row ── */}
@@ -918,5 +968,71 @@ const styles = StyleSheet.create({
   upcomingName: { fontSize: 14, color: '#F1F5F9', marginBottom: 2 },
   upcomingVenue: { fontSize: 11, color: '#475569' },
   upcomingType: { fontSize: 20 },
+
+  // Focus Mode toggle card
+  focusCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: '#0F0F1A',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1E1E2E',
+    gap: 12,
+  },
+  focusCardActive: {
+    backgroundColor: '#1A0808',
+    borderColor: '#EF444444',
+  },
+  focusCardLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  focusIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#1E1E2E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  focusIconCircleActive: {
+    backgroundColor: '#2A0808',
+    borderWidth: 1,
+    borderColor: '#EF444455',
+  },
+  focusCardText: { flex: 1 },
+  focusCardTitle: {
+    fontSize: 12,
+    color: '#CBD5E1',
+    letterSpacing: 1,
+    marginBottom: 3,
+  },
+  focusCardSub: {
+    fontSize: 11,
+    color: '#3F3F5A',
+    lineHeight: 15,
+  },
+  focusToggleBtn: {
+    backgroundColor: '#1E1E2E',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: '#3F3F5A',
+  },
+  focusToggleBtnActive: {
+    backgroundColor: '#2A0808',
+    borderColor: '#EF4444',
+  },
+  focusToggleText: {
+    fontSize: 13,
+    color: '#CBD5E1',
+    letterSpacing: 1.5,
+  },
 });
 

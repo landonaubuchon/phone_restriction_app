@@ -14,8 +14,10 @@ import {
 } from '@expo-google-fonts/oswald';
 
 import { AppProvider, useAppContext } from './src/context/AppContext';
+import FocusLockMonitor from './src/components/FocusLockMonitor';
 import SimulatedAppScreen from './src/screens/SimulatedAppScreen';
 import AdminScreen from './src/screens/AdminScreen';
+import InitiativesScreen from './src/screens/InitiativesScreen';
 
 // Screens — base function tabs
 import ShotClockScreen from './src/screens/ShotClockScreen';
@@ -183,6 +185,11 @@ function RootNavigator() {
       <Stack.Screen name="Flashlight" component={FlashlightScreen} options={{ title: 'Flashlight' }} />
       <Stack.Screen name="Simulation" component={SimulationScreen} options={{ title: 'Simulation' }} />
       <Stack.Screen
+        name="Initiatives"
+        component={InitiativesScreen}
+        options={{ title: '🏆 My Initiatives', headerStyle: { backgroundColor: '#0A0A0F' }, headerTintColor: '#EF4444' }}
+      />
+      <Stack.Screen
         name="Admin"
         component={AdminScreen}
         options={{
@@ -222,6 +229,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AppProvider>
+        {/* FocusLockMonitor listens for AppState changes while Focus Mode is
+            active and shows a full-screen return modal when the user comes back
+            from a different app.  It must be inside AppProvider (needs context)
+            but sits outside NavigationContainer so its Modal renders on top. */}
+        <FocusLockMonitor />
         <NavigationContainer>
           <StatusBar style="light" />
           <RootNavigator />

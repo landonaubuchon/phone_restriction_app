@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "BUZR",
+    "slug": "buzr-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#6C3FE8"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSContactsUsageDescription": "BUZR uses your contacts so you can quickly message friends at the venue.",
+        "NSLocationWhenInUseUsageDescription": "BUZR uses your location to detect when you enter or leave a venue geofence.",
+        "NSLocationAlwaysUsageDescription": "BUZR uses your location to maintain venue geofence detection in the background."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

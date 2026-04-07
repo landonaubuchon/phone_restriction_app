@@ -1,3 +1,4 @@
+// @refresh reset
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 
@@ -7,6 +8,10 @@ import { AppState } from 'react-native';
  * Simulated events are intentionally session-only: all event state is cleared
  * whenever the app returns to the foreground so that no event carries over
  * from a previous use.
+ *
+ * The `// @refresh reset` directive above ensures React Fast Refresh fully
+ * remounts this provider (resetting all state to its initial values) on every
+ * hot reload, so no simulated event ever leaks into a new development session.
  */
 const VenueContext = createContext(null);
 

@@ -146,6 +146,7 @@ export default function AdminScreen({ navigation }) {
     customEvents,
     addCustomEvent,
     removeCustomEvent,
+    clearAllCustomEvents,
     registerForEvent,
     unregisterFromEvent,
     addNotification,
@@ -446,6 +447,28 @@ export default function AdminScreen({ navigation }) {
             <Ionicons name="add-circle" size={18} color="#0A0A0F" />
             <Text style={[s.createBtnText, { fontFamily: F.black }]}>Create & Register</Text>
           </TouchableOpacity>
+
+          {customEvents.length > 0 && (
+            <TouchableOpacity
+              style={s.clearAllBtn}
+              activeOpacity={0.8}
+              onPress={() =>
+                Alert.alert(
+                  'Clear All Test Events',
+                  `Delete all ${customEvents.length} simulated event(s) and remove their registrations?`,
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Clear All', style: 'destructive', onPress: clearAllCustomEvents },
+                  ]
+                )
+              }
+            >
+              <Ionicons name="trash" size={16} color={ACCENT} />
+              <Text style={[s.clearAllBtnText, { fontFamily: F.semiBold }]}>
+                Clear All Test Events ({customEvents.length})
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* ── 6. Custom Events List ── */}
@@ -764,6 +787,18 @@ const s = StyleSheet.create({
   deleteBtn: {
     padding: 4,
   },
+  clearAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: ACCENT + '55',
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginTop: 12,
+  },
+  clearAllBtnText: { fontSize: 14, color: ACCENT },
 
   // Quick launch
   launchGrid: {

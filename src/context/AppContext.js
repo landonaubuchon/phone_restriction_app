@@ -92,11 +92,43 @@ export function AppProvider({ children }) {
         if (consent === 'true') setConsentGiven(true);
         if (eApps) setEmergencyApps(JSON.parse(eApps));
         if (profile) setUserProfile(JSON.parse(profile));
-        if (regEvents) setRegisteredEvents(JSON.parse(regEvents));
         if (camUsage) setCameraUsage(JSON.parse(camUsage));
-        if (ticketAct) setTicketActivated(JSON.parse(ticketAct));
-        if (custEvts) setCustomEvents(JSON.parse(custEvts));
         if (compliance) setComplianceStats({ ...DEFAULT_COMPLIANCE, ...JSON.parse(compliance) });
+
+        // Auto-prune expired admin test events on every startup so stale
+        // entries from previous sessions never accumulate.
+        const expiryCutoff = Date.now();
+        const loadedCustEvts = custEvts ? JSON.parse(custEvts) : [];
+        const validCustEvts = loadedCustEvts.filter(
+          (ev) => new Date(ev.endTime).getTime() + 30 * 60 * 1000 > expiryCutoff
+        );
+        const expiredIds = new Set(
+          loadedCustEvts
+            .filter((ev) => new Date(ev.endTime).getTime() + 30 * 60 * 1000 <= expiryCutoff)
+            .map((ev) => ev.id)
+        );
+        if (expiredIds.size > 0) {
+          AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_EVENTS, JSON.stringify(validCustEvts)).catch(() => {});
+        }
+        if (validCustEvts.length > 0) setCustomEvents(validCustEvts);
+
+        // Load registered events, removing any that referenced expired admin events.
+        const rawReg = regEvents ? JSON.parse(regEvents) : [];
+        const filteredReg = expiredIds.size > 0 ? rawReg.filter((id) => !expiredIds.has(id)) : rawReg;
+        if (expiredIds.size > 0 && filteredReg.length !== rawReg.length) {
+          AsyncStorage.setItem(STORAGE_KEYS.REGISTERED_EVENTS, JSON.stringify(filteredReg)).catch(() => {});
+        }
+        if (filteredReg.length > 0) setRegisteredEvents(filteredReg);
+
+        // Load ticket activations, removing entries for expired admin events.
+        const rawTickets = ticketAct ? JSON.parse(ticketAct) : {};
+        const filteredTickets = expiredIds.size > 0
+          ? Object.fromEntries(Object.entries(rawTickets).filter(([id]) => !expiredIds.has(id)))
+          : rawTickets;
+        if (expiredIds.size > 0 && Object.keys(filteredTickets).length !== Object.keys(rawTickets).length) {
+          AsyncStorage.setItem(STORAGE_KEYS.TICKET_ACTIVATED, JSON.stringify(filteredTickets)).catch(() => {});
+        }
+        if (Object.keys(filteredTickets).length > 0) setTicketActivated(filteredTickets);
       } catch (e) {
         // Ignore storage errors
       } finally {
@@ -293,6 +325,25 @@ export function AppProvider({ children }) {
     });
   }, []);
 
+  /** [Admin] Clear ALL custom simulated events and their related state. */
+  const clearAllCustomEvents = useCallback(() => {
+    setCustomEvents((prev) => {
+      const ids = new Set(prev.map((e) => e.id));
+      AsyncStorage.setItem(STORAGE_KEYS.CUSTOM_EVENTS, JSON.stringify([])).catch(() => {});
+      setRegisteredEvents((reg) => {
+        const updated = reg.filter((id) => !ids.has(id));
+        AsyncStorage.setItem(STORAGE_KEYS.REGISTERED_EVENTS, JSON.stringify(updated)).catch(() => {});
+        return updated;
+      });
+      setTicketActivated((tix) => {
+        const updated = Object.fromEntries(Object.entries(tix).filter(([id]) => !ids.has(id)));
+        AsyncStorage.setItem(STORAGE_KEYS.TICKET_ACTIVATED, JSON.stringify(updated)).catch(() => {});
+        return updated;
+      });
+      return [];
+    });
+  }, []);
+
   /** [Admin] Add a custom simulated event and persist it. */
   const addCustomEvent = useCallback((event) => {
     setCustomEvents((prev) => {
@@ -344,6 +395,7 @@ export function AppProvider({ children }) {
         customEvents,
         addCustomEvent,
         removeCustomEvent,
+        clearAllCustomEvents,
         activeEvent,
         restrictionActive,
         allowedApps,

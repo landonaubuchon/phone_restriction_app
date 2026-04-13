@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUZR | Stay Present At Live Events</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">BUZR</div>
+    <div class="topbar-actions">
+      <a id="live-app-link" class="cta" href="http://localhost:8081" target="_blank" rel="noopener noreferrer">Open Live App</a>
+      <a class="cta" href="#download">Get Started</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">EVENT PHONE EXPERIENCE</p>
+        <h1>Voluntary focus mode for concerts, sports, and theaters.</h1>
+        <p class="lede">BUZR helps attendees stay present with event-aware phone restrictions, emergency app access, and gamified rewards.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#download">Open In Expo</a>
+          <a class="btn ghost" href="#features">See Features</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <p class="clock-label">CURRENT TIME</p>
+        <div class="clock">08:24</div>
+        <p class="clock-foot">RESTRICTIONS END IN 1h 23m</p>
+      </div>
+    </section>
+
+    <section id="features" class="features">
+      <article><h3>Focus Lock</h3><p>Users consciously opt in and get nudged back if they leave the app during active event mode.</p></article>
+      <article><h3>Emergency Access</h3><p>Critical apps like Phone, Messages, and approved medical tools remain available.</p></article>
+      <article><h3>Initiatives</h3><p>Reward progress for compliant sessions with streaks, milestones, and perks.</p></article>
+    </section>
+
+    <section id="download" class="download">
+      <h2>Run BUZR Today</h2>
+      <p>Use Expo Go on your phone and launch the latest build from your terminal.</p>
+      <pre><code>npm install
+npx expo start --tunnel</code></pre>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      var ports = [8081, 8082, 19006, 3000];
+      var liveLink = document.getElementById('live-app-link');
+      if (!liveLink) return;
+
+      function probe(port) {
+        var url = 'http://localhost:' + port;
+        var timeout = new Promise(function (_, reject) {
+          setTimeout(function () { reject(new Error('timeout')); }, 650);
+        });
+        var request = fetch(url, { mode: 'no-cors' });
+        return Promise.race([request, timeout]).then(function () { return url; });
+      }
+
+      (async function () {
+        for (var i = 0; i < ports.length; i += 1) {
+          try {
+            var url = await probe(ports[i]);
+            liveLink.href = url;
+            liveLink.textContent = 'Open Live App (' + ports[i] + ')';
+            return;
+          } catch (e) {
+            // Try next known Expo/web dev port.
+          }
+        }
+        liveLink.textContent = 'Open Live App (start Expo first)';
+      })();
+    })();
+  </script>
+</body>
+</html>

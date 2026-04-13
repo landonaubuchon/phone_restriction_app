@@ -113,6 +113,7 @@ export function AppProvider({ children }) {
       if (!consentGiven) {
         setRestrictionActive(false);
         setActiveEvent(null);
+        setAllowedApps([]);
         return;
       }
       // Admin GPS override takes precedence over real device location
@@ -145,6 +146,8 @@ export function AppProvider({ children }) {
       setRestrictionActive(restrictionOverride !== null ? restrictionOverride : !!found);
       if (found) {
         setAllowedApps(getAllowedApps(found, emergencyApps));
+      } else {
+        setAllowedApps([]);
       }
     };
 
@@ -186,6 +189,13 @@ export function AppProvider({ children }) {
     setRegisteredEvents((prev) => {
       const updated = prev.filter((id) => id !== eventId);
       AsyncStorage.setItem(STORAGE_KEYS.REGISTERED_EVENTS, JSON.stringify(updated));
+      return updated;
+    });
+    setTicketActivated((prev) => {
+      if (!(eventId in prev)) return prev;
+      const updated = { ...prev };
+      delete updated[eventId];
+      AsyncStorage.setItem(STORAGE_KEYS.TICKET_ACTIVATED, JSON.stringify(updated)).catch(() => {});
       return updated;
     });
   }, []);
@@ -303,6 +313,13 @@ export function AppProvider({ children }) {
     setRegisteredEvents((prev) => {
       const updated = prev.filter((id) => id !== eventId);
       AsyncStorage.setItem(STORAGE_KEYS.REGISTERED_EVENTS, JSON.stringify(updated)).catch(() => {});
+      return updated;
+    });
+    setTicketActivated((prev) => {
+      if (!(eventId in prev)) return prev;
+      const updated = { ...prev };
+      delete updated[eventId];
+      AsyncStorage.setItem(STORAGE_KEYS.TICKET_ACTIVATED, JSON.stringify(updated)).catch(() => {});
       return updated;
     });
   }, []);

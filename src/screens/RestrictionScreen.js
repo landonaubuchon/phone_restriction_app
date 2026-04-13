@@ -28,12 +28,14 @@ export default function RestrictionScreen({ navigation }) {
   const [pulse] = useState(new Animated.Value(1));
 
   useEffect(() => {
-    Animated.loop(
+    const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1.08, duration: 800, useNativeDriver: true }),
         Animated.timing(pulse, { toValue: 1, duration: 800, useNativeDriver: true }),
       ])
-    ).start();
+    );
+    loop.start();
+    return () => loop.stop();
   }, [pulse]);
 
   useEffect(() => {

@@ -35,6 +35,8 @@ function Barcode() {
 function TicketCard({ event, isActivated, onActivate, onDeactivate }) {
   const typeColor = EVENT_TYPE_COLORS[event.type] || '#6D28D9';
   const typeIcon = EVENT_TYPE_ICONS[event.type] || '📅';
+  const ticketCode = event?.ticketCode || 'N/A';
+  const barcodeDigits = String(ticketCode).replace(/[^0-9]/g, '').padStart(12, '0').slice(-12);
   const active = isEventActive(event);
   const upcoming = isEventUpcoming(event);
   const canActivate = active || upcoming;
@@ -138,10 +140,10 @@ function TicketCard({ event, isActivated, onActivate, onDeactivate }) {
       {/* Ticket bottom half — barcode + ticket code + activation */}
       <View style={ticketStyles.bottomHalf}>
         <Text style={ticketStyles.ticketCodeLabel}>TICKET CODE</Text>
-        <Text style={ticketStyles.ticketCode}>{event.ticketCode}</Text>
+        <Text style={ticketStyles.ticketCode}>{ticketCode}</Text>
         <Barcode />
         <Text style={ticketStyles.barcodeDigits}>
-          {event.ticketCode.replace(/[^0-9]/g, '').padStart(12, '0')}
+          {barcodeDigits}
         </Text>
 
         {/* Gate activation button — only shown when event is active/upcoming */}

@@ -164,6 +164,24 @@ export default function ProfileScreen({ navigation }) {
 
         {/* Emergency Apps */}
         <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.initiativesRow}
+            onPress={() => navigation.navigate('Initiatives')}
+            activeOpacity={0.75}
+          >
+            <View style={styles.initiativesLeft}>
+              <Text style={styles.initiativesIcon}>🏆</Text>
+              <View>
+                <Text style={styles.initiativesTitle}>My Initiatives</Text>
+                <Text style={styles.initiativesSub}>Rewards for using BUZR Focus Mode</Text>
+              </View>
+            </View>
+            <Text style={styles.eventRowArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Emergency Apps */}
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Emergency Apps</Text>
             <TouchableOpacity onPress={() => navigation.navigate('EmergencyApps')}>

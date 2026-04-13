@@ -155,3 +155,23 @@ Both are optional — the app falls back to time-only mode if location is denied
 | Camera permission denied | Go to Settings → Expo Go → allow Camera |
 | Location permission denied | Go to Settings → Expo Go → allow Location (restrictions fall back to time-only mode) |
 | Fonts not loading | Run `npx expo start --clear` — Oswald fonts are bundled and will load from Google Fonts on first run |
+
+---
+
+## Website (Landing Page)
+
+A standalone website is included in the `website/` folder.
+
+### Run locally
+
+From the project root:
+
+```bash
+python3 -m http.server 4173 -d website
+```
+
+Then open:
+
+```text
+http://localhost:4173
+```

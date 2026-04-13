@@ -22,7 +22,7 @@ import {
 import { EVENT_TYPE_ICONS, EVENT_TYPE_COLORS } from '../data/sampleEvents';
 
 export default function EventDetailScreen({ route, navigation }) {
-  const { eventId } = route.params;
+  const eventId = route?.params?.eventId;
   const { events, registeredEvents, registerForEvent, unregisterFromEvent, emergencyApps, consentGiven } = useAppContext();
   const event = events.find((e) => e.id === eventId);
 
